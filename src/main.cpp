@@ -40,7 +40,7 @@ DHT humidity_sensor(HUMIDITY_SENSOR_PIN, DHTTYPE);
 bool max_endstop_state = OPEN;
 bool min_endstop_state = OPEN;
 bool motor_enable = OFF;
-bool motor_direction = CW;
+bool motor_direction = DIRECTION_TO_MAX;
 bool vapor_enable = OFF;
 bool heater_enable = OFF;
 bool fan_enable = OFF;
@@ -119,6 +119,7 @@ void init_all_pins()
   pinMode(HUMIDITY_SENSOR_PIN, INPUT_PULLUP);
 
   pinMode(MAX_ENDSTOP_PIN, INPUT_PULLUP);
+  pinMode(MIN_ENDSTOP_PIN, INPUT_PULLUP);
 }
 
 void buttons_init()
@@ -212,7 +213,7 @@ void motor_off()
 
 void motor_set_direction(bool direction)
 {
-  if (direction == CW)
+  if (direction == DIRECTION_TO_MAX)
   {
     digitalWrite(MOTOR_A_PIN, HIGH);
     digitalWrite(MOTOR_B_PIN, LOW);
@@ -226,12 +227,20 @@ void motor_set_direction(bool direction)
 
 void motor_update()
 {
-  if (motor_enable and (max_endstop_state or min_endstop_state))
-  {
-    motor_off();
-
-    motor_direction != motor_direction;
-    motor_set_direction(motor_direction);
+  if (motor_enable){
+    if (motor_direction == DIRECTION_TO_MAX and max_endstop_state == CLOSE)
+    {
+      motor_off();
+      move_button.off();
+      motor_direction = DIRECTION_TO_MIN;
+      motor_set_direction(motor_direction);
+    }else if(motor_direction == DIRECTION_TO_MIN and min_endstop_state == CLOSE)
+    {
+      motor_off();
+      move_button.off();
+      motor_direction = DIRECTION_TO_MAX;
+      motor_set_direction(motor_direction);
+    }
   }
 }
 
