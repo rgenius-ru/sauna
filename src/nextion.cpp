@@ -61,3 +61,9 @@ void change_text(String obj_name, String text){
   write_nextion(_text);
   Serial.println(_text);
 }
+
+void change_color(String obj_name, uint32_t color){
+  String _text = obj_name + ".pco=" + String(color);
+  write_nextion(_text);
+  Serial.println(_text);
+}
