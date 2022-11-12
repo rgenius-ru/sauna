@@ -243,6 +243,32 @@ void fan_update(){
   }
 }
 
+void power_enable(){
+  move_button.enable();
+  heat_button.enable();
+  light_button.enable();
+  vapor_button.enable();
+  fan_button.enable();
+  t_up_button.enable();
+  t_down_button.enable();
+  h_up_button.enable();
+  h_down_button.enable();
+}
+
+void power_disable(){
+  disable_all_objects();
+
+  move_button.disable();
+  heat_button.disable();
+  light_button.disable();
+  vapor_button.disable();
+  fan_button.disable();
+  t_up_button.disable();
+  t_down_button.disable();
+  h_up_button.disable();
+  h_down_button.disable();
+}
+
 void display_update(){
   bool state = RELEASED;
   uint8_t button = 0;
@@ -260,26 +286,10 @@ void display_update(){
         digitalWrite(LED_PIN, power_button.is_on());
         if (state == PRESSED){
           if (power_button.is_on()){
-            move_button.enable();
-            heat_button.enable();
-            light_button.enable();
-            vapor_button.enable();
-            fan_button.enable();
-            t_up_button.enable();
-            t_down_button.enable();
-            h_up_button.enable();
-            h_down_button.enable();
+            power_enable();
           }
           else{
-            move_button.disable();
-            heat_button.disable();
-            light_button.disable();
-            vapor_button.disable();
-            fan_button.disable();
-            t_up_button.disable();
-            t_down_button.disable();
-            h_up_button.disable();
-            h_down_button.disable();
+            power_disable();
           }
         }
         break;
@@ -346,7 +356,7 @@ void display_update(){
   }
 }
 
-void setup() {
+void disable_all_objects(){
   // Off objects
   digitalWrite(LIGHT_PIN, HIGH);
   digitalWrite(FAN_PIN, HIGH);
@@ -355,7 +365,9 @@ void setup() {
   digitalWrite(MOTOR_B_PIN, LOW);
   digitalWrite(VAPOR_PIN, HIGH);
   digitalWrite(HEATER_PIN, LOW);
-  
+}
+
+void init_all_pins(){
   // Init pins
   pinMode(LED_PIN, OUTPUT);
   pinMode(LIGHT_PIN, OUTPUT);
@@ -369,7 +381,12 @@ void setup() {
   pinMode(HUMIDITY_SENSOR_PIN, INPUT_PULLUP);
 
   pinMode(ENDSTOP_PIN, INPUT_PULLUP);
+}
 
+void setup() {
+  disable_all_objects();
+  init_all_pins();
+  
   Serial.begin(9600);
   Serial2.begin(9600);
 
