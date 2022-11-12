@@ -41,6 +41,9 @@ bool button1_state = OFF;
 bool endstop_state = OPEN;
 bool motor_enable = OFF;
 bool motor_direction = CW;
+bool vapor_enable = OFF;
+bool heater_enable = OFF;
+bool fan_enable = OFF;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -56,6 +59,9 @@ uint16_t heater_interval_update = 1000; // ms
 
 uint32_t vapor_previous_time = 0;
 uint16_t vapor_interval_update = 1000; // ms
+
+uint32_t fan_previous_time = 0;
+uint16_t fan_interval_update = 1000; // ms
 
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
@@ -178,6 +184,11 @@ void humidity_update(){
 }
 
 void heater_update(){
+  if (not heater_enable){
+    digitalWrite(HEATER_PIN, LOW);
+    return;
+  }
+
   if (millis() > heater_previous_time + heater_interval_update){
     heater_previous_time = millis();
     
@@ -193,6 +204,11 @@ void heater_update(){
 }
 
 void vapor_update(){
+  if (not vapor_enable){
+    digitalWrite(VAPOR_PIN, HIGH);
+    return;
+  }
+
   if (millis() > vapor_previous_time + vapor_interval_update){
     vapor_previous_time = millis();
     
@@ -200,10 +216,28 @@ void vapor_update(){
 
     if (h < humidity_set){
       digitalWrite(VAPOR_PIN, LOW);
-      digitalWrite(FAN_PIN, HIGH);
     }
     else if (h > humidity_set){
       digitalWrite(VAPOR_PIN, HIGH);
+    }
+  }
+}
+
+void fan_update(){
+  if (not fan_enable){
+    digitalWrite(FAN_PIN, HIGH);
+    return;
+  }
+
+  if (millis() > fan_previous_time + fan_interval_update){
+    fan_previous_time = millis();
+    
+    uint8_t h = humidity.get();
+
+    if (h < humidity_set){
+      digitalWrite(FAN_PIN, HIGH);
+    }
+    else if (h > humidity_set){
       digitalWrite(FAN_PIN, LOW);
     }
   }
@@ -221,7 +255,7 @@ void display_update(){
     Serial.println("OK");
 
     switch (button){
-      case 1:
+      case 1: // power
         button_update(power_button, state);
         digitalWrite(LED_PIN, power_button.is_on());
         if (state == PRESSED){
@@ -250,7 +284,7 @@ void display_update(){
         }
         break;
 
-      case 2:
+      case 2: // move
         button_update(move_button, state);
         if (move_button.is_on()){
           motor_on();
@@ -260,24 +294,24 @@ void display_update(){
         }
         break;
 
-      case 3:
+      case 3: // heater
         button_update(heat_button, state);
-        digitalWrite(HEATER_PIN, heat_button.is_on());
+        heater_enable = heat_button.is_on();
         break;
 
-      case 4:
+      case 4: // light
         button_update(light_button, state);
         digitalWrite(LIGHT_PIN, !light_button.is_on());
         break;
 
-      case 5:
+      case 5: // vapor
         button_update(vapor_button, state);
-        digitalWrite(VAPOR_PIN, !vapor_button.is_on());
+        vapor_enable = vapor_button.is_on();
         break;
 
-      case 6:
+      case 6: // fan
         button_update(fan_button, state);
-        digitalWrite(FAN_PIN, !fan_button.is_on());
+        fan_enable = fan_button.is_on();
         break;
 
       case 10: // temp up
@@ -313,6 +347,7 @@ void display_update(){
 }
 
 void setup() {
+  // Off objects
   digitalWrite(LIGHT_PIN, HIGH);
   digitalWrite(FAN_PIN, HIGH);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH);
@@ -320,7 +355,8 @@ void setup() {
   digitalWrite(MOTOR_B_PIN, LOW);
   digitalWrite(VAPOR_PIN, HIGH);
   digitalWrite(HEATER_PIN, LOW);
-
+  
+  // Init pins
   pinMode(LED_PIN, OUTPUT);
   pinMode(LIGHT_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
@@ -361,6 +397,7 @@ void loop() {
 
   humidity_update();
   vapor_update();
+  fan_update();
   
   // motor_update();
 
