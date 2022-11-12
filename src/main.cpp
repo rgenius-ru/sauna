@@ -6,7 +6,8 @@
 #include "physical_quantity.h"
 #include "OneWire.h"
 #include "DallasTemperature.h"
- 
+#include "DHT.h"
+
 
 #define LED_PIN 2
 #define LIGHT_PIN 21
@@ -18,17 +19,23 @@
 #define HEATER_PIN 26
 #define ENDSTOP_PIN 34
 #define TEMP_SENSOR_PIN 32
-#define HUMIDITY_SENSOR_PIN 35
+#define HUMIDITY_SENSOR_PIN 33
 
 #define TEMP_MIN 10 // 50
 #define TEMP_MAX 80
-#define HUMIDITY_MIN 40
+#define HUMIDITY_MIN 10 // 40
 #define HUMIDITY_MAX 80
+
+#define DHTTYPE DHT21 // DHT 21 (AM2301)
+
+#define TEXT_COLOR_DEFAULT 63320
+#define TEXT_COLOR_SELECTED 1631
 
 
 OneWire oneWire(TEMP_SENSOR_PIN);
 DallasTemperature temp_sensor(&oneWire);
 
+DHT humidity_sensor(HUMIDITY_SENSOR_PIN, DHTTYPE);
 
 bool button1_state = OFF;
 bool endstop_state = OPEN;
@@ -41,6 +48,11 @@ uint16_t endstop_interval_update = 50; // ms
 uint32_t temp_previous_time = 0;
 uint16_t temp_interval_update = 2000; // ms
 
+uint32_t humidity_previous_time = 0;
+uint16_t humidity_interval_update = 2000; // ms
+
+uint32_t heater_previous_time = 0;
+uint16_t heater_interval_update = 1000; // ms
 
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
@@ -58,6 +70,8 @@ Button h_down_button = Button("h_down");
 PhysicalQuantity temp = PhysicalQuantity("t", TEMP_MIN, TEMP_MAX);
 PhysicalQuantity humidity = PhysicalQuantity("h", HUMIDITY_MIN, HUMIDITY_MAX);
 
+uint8_t temp_set = 0;
+uint8_t humidity_set = 0;
 
 void buttons_init(){
   power_button.set_pics(big_on_normal, big_on_pressed, big_off_normal, big_off_pressed, big_disable_normal);
@@ -150,51 +164,34 @@ void temp_update(){
   }
 }
 
-void setup() {
-  digitalWrite(LIGHT_PIN, HIGH);
-  digitalWrite(FAN_PIN, HIGH);
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH);
-  digitalWrite(MOTOR_A_PIN, HIGH);
-  digitalWrite(MOTOR_B_PIN, LOW);
-  digitalWrite(VAPOR_PIN, HIGH);
-  digitalWrite(HEATER_PIN, LOW);
-
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(LIGHT_PIN, OUTPUT);
-  pinMode(FAN_PIN, OUTPUT);
-  pinMode(MOTOR_ENABLE_PIN, OUTPUT);
-  pinMode(MOTOR_A_PIN, OUTPUT);
-  pinMode(MOTOR_B_PIN, OUTPUT);
-  pinMode(VAPOR_PIN, OUTPUT);
-  pinMode(HEATER_PIN, OUTPUT);
-  pinMode(TEMP_SENSOR_PIN, INPUT_PULLUP);
-  pinMode(HUMIDITY_SENSOR_PIN INPUT_PULLUP);
-
-  pinMode(ENDSTOP_PIN, INPUT_PULLUP);
-
-  Serial.begin(9600);
-  Serial2.begin(9600);
-
-  buttons_init();
-  temp.set(60);
-  humidity.set(75);
-
-  temp_sensor.begin();
-  temp_sensor.setResolution(9);
-
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_PIN, LOW);
-  delay(1000);
+void humidity_update(){
+  if (millis() > humidity_previous_time + humidity_interval_update){
+    humidity_previous_time = millis();
+    
+    uint8_t h = humidity_sensor.readHumidity();
+    
+    humidity.set(h);
+  }
 }
 
-void loop() {
+void heater_update(){
+  if (millis() > heater_previous_time + heater_interval_update){
+    heater_previous_time = millis();
+    
+    uint8_t t = temp.get();
+
+    if (t < temp_set){
+      digitalWrite(HEATER_PIN, HIGH);
+    }
+    else if (t > temp_set){
+      digitalWrite(HEATER_PIN, LOW);
+    }
+  }
+}
+
+void display_update(){
   bool state = RELEASED;
   uint8_t button = 0;
-
-  endstop_update();
-  temp_update();
-  // motor_update();
 
   if (read_nextion(button, state)) {
     Serial.print(button);
@@ -263,25 +260,27 @@ void loop() {
         digitalWrite(FAN_PIN, !fan_button.is_on());
         break;
 
-      case 10:
+      case 10: // temp up
         if (state == PRESSED){
           temp.set(temp.get() + 1);
+          change_color("t", TEXT_COLOR_SELECTED);
         }
         break;
 
-      case 11:
+      case 11: // humidity up
         if (state == PRESSED){
           humidity.set(humidity.get() + 1);
         }
         break;
       
-      case 12:
+      case 12: // temp down
         if (state == PRESSED){
           temp.set(temp.get() - 1);
+          change_color("t", TEXT_COLOR_DEFAULT);
         }
         break;
       
-      case 13:
+      case 13: // humidity down
         if (state == PRESSED){
           humidity.set(humidity.get() - 1);
         }
@@ -291,4 +290,55 @@ void loop() {
         break;
     }
   }
+}
+
+void setup() {
+  digitalWrite(LIGHT_PIN, HIGH);
+  digitalWrite(FAN_PIN, HIGH);
+  digitalWrite(MOTOR_ENABLE_PIN, HIGH);
+  digitalWrite(MOTOR_A_PIN, HIGH);
+  digitalWrite(MOTOR_B_PIN, LOW);
+  digitalWrite(VAPOR_PIN, HIGH);
+  digitalWrite(HEATER_PIN, LOW);
+
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(LIGHT_PIN, OUTPUT);
+  pinMode(FAN_PIN, OUTPUT);
+  pinMode(MOTOR_ENABLE_PIN, OUTPUT);
+  pinMode(MOTOR_A_PIN, OUTPUT);
+  pinMode(MOTOR_B_PIN, OUTPUT);
+  pinMode(VAPOR_PIN, OUTPUT);
+  pinMode(HEATER_PIN, OUTPUT);
+  pinMode(TEMP_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(HUMIDITY_SENSOR_PIN, INPUT_PULLUP);
+
+  pinMode(ENDSTOP_PIN, INPUT_PULLUP);
+
+  Serial.begin(9600);
+  Serial2.begin(9600);
+
+  buttons_init();
+
+  temp_set = 27;
+  humidity_set = 75;
+
+  temp_sensor.begin();
+  temp_sensor.setResolution(9);
+
+  humidity_sensor.begin();
+
+  digitalWrite(LED_PIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_PIN, LOW);
+  delay(1000);
+}
+
+void loop() {
+  endstop_update();
+  temp_update();
+  heater_update();
+  humidity_update();
+  // motor_update();
+
+  display_update();
 }
