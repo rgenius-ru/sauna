@@ -54,6 +54,9 @@ uint16_t humidity_interval_update = 2000; // ms
 uint32_t heater_previous_time = 0;
 uint16_t heater_interval_update = 1000; // ms
 
+uint32_t vapor_previous_time = 0;
+uint16_t vapor_interval_update = 1000; // ms
+
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
 
@@ -189,6 +192,23 @@ void heater_update(){
   }
 }
 
+void vapor_update(){
+  if (millis() > vapor_previous_time + vapor_interval_update){
+    vapor_previous_time = millis();
+    
+    uint8_t h = humidity.get();
+
+    if (h < humidity_set){
+      digitalWrite(VAPOR_PIN, LOW);
+      digitalWrite(FAN_PIN, HIGH);
+    }
+    else if (h > humidity_set){
+      digitalWrite(VAPOR_PIN, HIGH);
+      digitalWrite(FAN_PIN, LOW);
+    }
+  }
+}
+
 void display_update(){
   bool state = RELEASED;
   uint8_t button = 0;
@@ -320,7 +340,7 @@ void setup() {
   buttons_init();
 
   temp_set = 27;
-  humidity_set = 75;
+  humidity_set = 55;
 
   temp_sensor.begin();
   temp_sensor.setResolution(9);
@@ -335,9 +355,13 @@ void setup() {
 
 void loop() {
   endstop_update();
+  
   temp_update();
   heater_update();
+
   humidity_update();
+  vapor_update();
+  
   // motor_update();
 
   display_update();
