@@ -9,9 +9,9 @@ PhysicalQuantity::PhysicalQuantity(String name, uint8_t min, uint8_t max){
 }
 
 void PhysicalQuantity::set(uint8_t value){
-            Serial.println(value);
-        Serial.println(min_value);
-        Serial.println(max_value);
+        // Serial.println(value);
+        // Serial.println(min_value);
+        // Serial.println(max_value);
     if (value >= min_value and value <= max_value){
         _value = value;
         _value_str = String(_value);
