@@ -14,8 +14,8 @@
 #define CLOSE 1
 #define OPEN 0
 
-#define CW 1
-#define CCW 0
+#define DIRECTION_TO_MAX 1
+#define DIRECTION_TO_MIN 0
 
 
 #endif // COMMON_H
