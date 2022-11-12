@@ -4,7 +4,9 @@
 #include "buttons.h"
 #include "common.h"
 #include "physical_quantity.h"
-
+#include "OneWire.h"
+#include "DallasTemperature.h"
+ 
 
 #define LED_PIN 2
 #define LIGHT_PIN 21
@@ -15,11 +17,17 @@
 #define VAPOR_PIN 27
 #define HEATER_PIN 26
 #define ENDSTOP_PIN 34
+#define TEMP_SENSOR_PIN 32
+#define HUMIDITY_SENSOR_PIN 35
 
-#define TEMP_MIN 50
+#define TEMP_MIN 10 // 50
 #define TEMP_MAX 80
 #define HUMIDITY_MIN 40
 #define HUMIDITY_MAX 80
+
+
+OneWire oneWire(TEMP_SENSOR_PIN);
+DallasTemperature temp_sensor(&oneWire);
 
 
 bool button1_state = OFF;
@@ -29,6 +37,9 @@ bool motor_direction = CW;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
+
+uint32_t temp_previous_time = 0;
+uint16_t temp_interval_update = 2000; // ms
 
 
 LatchingButton power_button = LatchingButton("power");
@@ -127,6 +138,18 @@ void motor_update(){
   }
 }
 
+void temp_update(){
+  if (millis() > temp_previous_time + temp_interval_update){
+    temp_previous_time = millis();
+    
+    temp_sensor.setWaitForConversion(false);  // makes it async
+    temp_sensor.requestTemperatures();
+    temp_sensor.setWaitForConversion(true);
+    
+    temp.set(temp_sensor.getTempCByIndex(0));
+  }
+}
+
 void setup() {
   digitalWrite(LIGHT_PIN, HIGH);
   digitalWrite(FAN_PIN, HIGH);
@@ -144,6 +167,8 @@ void setup() {
   pinMode(MOTOR_B_PIN, OUTPUT);
   pinMode(VAPOR_PIN, OUTPUT);
   pinMode(HEATER_PIN, OUTPUT);
+  pinMode(TEMP_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(HUMIDITY_SENSOR_PIN INPUT_PULLUP);
 
   pinMode(ENDSTOP_PIN, INPUT_PULLUP);
 
@@ -152,7 +177,10 @@ void setup() {
 
   buttons_init();
   temp.set(60);
-  humidity.set(85);
+  humidity.set(75);
+
+  temp_sensor.begin();
+  temp_sensor.setResolution(9);
 
   digitalWrite(LED_PIN, HIGH);
   delay(1000);
@@ -165,6 +193,7 @@ void loop() {
   uint8_t button = 0;
 
   endstop_update();
+  temp_update();
   // motor_update();
 
   if (read_nextion(button, state)) {
