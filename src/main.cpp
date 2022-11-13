@@ -28,6 +28,11 @@
 #define HUMIDITY_MIN 40
 #define HUMIDITY_MAX 80
 
+#define HH_MAX 99   // hours
+#define HH_MIN 0    // hours
+#define MM_MAX 99   // minutes
+#define MM_MIN 0    // minutes
+
 #define DHTTYPE DHT21 // DHT 21 (AM2301)
 
 #define TEXT_COLOR_DEFAULT 63320 // #F0E8C0 rgb(240,232,192)
@@ -49,6 +54,7 @@ bool heater_enable = OFF;
 bool fan_enable = OFF;
 bool temp_selected_state = false;
 bool humidity_selected_state = false;
+bool timer_selected_state = false;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -74,6 +80,9 @@ uint16_t temp_selected_timer = 3000; // ms
 uint32_t humidity_selected_previous_time = 0;
 uint16_t humidity_selected_timer = 3000; // ms
 
+uint32_t timer_selected_previous_time = 0;
+uint16_t timer_selected_timer = 3000; // ms
+
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
 
@@ -97,6 +106,23 @@ PhysicalQuantity humidity = PhysicalQuantity("h", 0, 99);
 
 uint8_t temp_set = 0;
 uint8_t humidity_set = 0;
+
+uint8_t timer_hours = 0;
+uint8_t timer_minutes = 0;
+
+String format_two_digits(uint8_t number)
+{
+  String str = "";
+
+  if (number < 10)
+  {
+    str += "0";
+  }
+
+  str += String(number);
+
+  return str;
+}
 
 void disable_all_objects()
 {
@@ -573,6 +599,112 @@ void humidity_down(bool state)
   }
 }
 
+void hh_up(bool state)
+{
+  if (not hh_up_button.is_enable())
+  {
+    return;
+  }
+
+  if (state == PRESSED)
+  {
+    if (timer_selected_state == true)
+    {
+      if (timer_hours < HH_MAX)
+      {
+        timer_hours++;
+      }
+    }
+    change_color("time", TEXT_COLOR_SELECTED);
+    change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+    timer_selected_previous_time = millis();
+    timer_selected_state = true;
+  }
+}
+
+void hh_down(bool state)
+{
+  if (not hh_down_button.is_enable())
+  {
+    return;
+  }
+
+  if (state == PRESSED)
+  {
+    if (timer_selected_state == true)
+    {
+      if (timer_hours > HH_MIN)
+      {
+        timer_hours--;
+      }
+    }
+    change_color("time", TEXT_COLOR_SELECTED);
+    change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+    timer_selected_previous_time = millis();
+    timer_selected_state = true;
+  }
+}
+
+void mm_up(bool state)
+{
+  if (not mm_up_button.is_enable())
+  {
+    return;
+  }
+
+  if (state == PRESSED)
+  {
+    if (timer_selected_state == true)
+    {
+      if (timer_minutes < MM_MAX)
+      {
+        timer_minutes++;
+      }
+    }
+    change_color("time", TEXT_COLOR_SELECTED);
+    change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+    timer_selected_previous_time = millis();
+    timer_selected_state = true;
+  }
+}
+
+void mm_down(bool state)
+{
+  if (not mm_down_button.is_enable())
+  {
+    return;
+  }
+
+  if (state == PRESSED)
+  {
+    if (timer_selected_state == true)
+    {
+      if (timer_minutes > MM_MIN)
+      {
+        timer_minutes--;
+      }
+    }
+    change_color("time", TEXT_COLOR_SELECTED);
+    change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+    timer_selected_previous_time = millis();
+    timer_selected_state = true;
+  }
+}
+
+void timer_selected_update()
+{
+  if (timer_selected_state == false)
+  {
+    return;
+  }
+
+  if (millis() > timer_selected_previous_time + timer_selected_timer)
+  {
+    change_color("time", TEXT_COLOR_DEFAULT);
+    timer_selected_state = false;
+  }
+}
+
 void temp_selected_update()
 {
   if (temp_selected_state == false)
@@ -658,6 +790,22 @@ void display_update()
       humidity_down(state);
       break;
 
+    case 14: // hh up
+      hh_up(state);
+      break;
+
+    case 15: // hh down
+      hh_down(state);
+      break;
+
+    case 16: // mm up 
+      mm_up(state);
+      break;
+
+    case 17: // mm down
+      mm_down(state);
+      break;
+
     default:
       break;
     }
@@ -704,4 +852,5 @@ void loop()
   display_update();
   temp_selected_update();
   humidity_selected_update();
+  timer_selected_update();
 }
