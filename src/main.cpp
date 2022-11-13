@@ -9,10 +9,10 @@
 #include "DHT.h"
 
 #define LED_PIN 2
-#define LIGHT_PIN 21
-#define FAN_PIN 19
-#define MOTOR_ENABLE_PIN 14
-#define MOTOR_A_PIN 18
+#define LIGHT_PIN 19
+#define FAN_PIN 14
+#define MOTOR_ENABLE_PIN 18
+#define MOTOR_A_PIN 21
 #define MOTOR_B_PIN 5
 #define VAPOR_PIN 27
 #define HEATER_PIN 26
@@ -28,8 +28,9 @@
 
 #define DHTTYPE DHT21 // DHT 21 (AM2301)
 
-#define TEXT_COLOR_DEFAULT 63320
-#define TEXT_COLOR_SELECTED 1631
+#define TEXT_COLOR_DEFAULT 63320 // #F0E8C0 rgb(240,232,192)
+#define TEXT_COLOR_SELECTED 1791 // #00DEFF rgb(0,222,255) 1631 // #00C8F8 rgb(0,200,248)
+#define TEXT_COLOR_DISABLED 6371 // #1C1D1F rgb(28,29,31)
 
 OneWire oneWire(TEMP_SENSOR_PIN);
 DallasTemperature temp_sensor(&oneWire);
@@ -356,6 +357,10 @@ void power_enable()
   t_down_button.enable();
   h_up_button.enable();
   h_down_button.enable();
+
+  change_color("t", TEXT_COLOR_DEFAULT);
+  change_color("h", TEXT_COLOR_DEFAULT);
+  change_color("time", TEXT_COLOR_DEFAULT);
 }
 
 void power_disable()
@@ -371,6 +376,10 @@ void power_disable()
   t_down_button.disable();
   h_up_button.disable();
   h_down_button.disable();
+
+  change_color("t", TEXT_COLOR_DISABLED);
+  change_color("h", TEXT_COLOR_DISABLED);
+  change_color("time", TEXT_COLOR_DISABLED);
 }
 
 void display_update()
