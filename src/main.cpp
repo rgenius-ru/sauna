@@ -29,7 +29,7 @@
 #define DHTTYPE DHT21 // DHT 21 (AM2301)
 
 #define TEXT_COLOR_DEFAULT 63320 // #F0E8C0 rgb(240,232,192)
-#define TEXT_COLOR_SELECTED 1791 // #00DEFF rgb(0,222,255) 1631 // #00C8F8 rgb(0,200,248)
+#define TEXT_COLOR_SELECTED 6371 // 1791 // #00DEFF rgb(0,222,255) 1631 // #00C8F8 rgb(0,200,248)
 #define TEXT_COLOR_DISABLED 6371 // #1C1D1F rgb(28,29,31)
 
 OneWire oneWire(TEMP_SENSOR_PIN);
@@ -45,8 +45,8 @@ bool motor_direction = DIRECTION_TO_MAX;
 bool vapor_enable = OFF;
 bool heater_enable = OFF;
 bool fan_enable = OFF;
-bool temp_flash_state = false;
-bool humidity_flash_state = false;
+bool temp_selected_state = false;
+bool humidity_selected_state = false;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -65,6 +65,12 @@ uint16_t vapor_interval_update = 1000; // ms
 
 uint32_t fan_previous_time = 0;
 uint16_t fan_interval_update = 1000; // ms
+
+uint32_t temp_selected_previous_time = 0;
+uint16_t temp_selected_timer = 3000; // ms
+
+uint32_t humidity_selected_previous_time = 0;
+uint16_t humidity_selected_timer = 3000; // ms
 
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
@@ -257,7 +263,8 @@ void temp_update()
     temp_sensor.requestTemperatures();
     temp_sensor.setWaitForConversion(true);
 
-    temp.set(temp_sensor.getTempCByIndex(0));
+    uint8_t t = temp_sensor.getTempCByIndex(0);
+    temp.set(t, !temp_selected_state);
   }
 }
 
@@ -268,8 +275,7 @@ void humidity_update()
     humidity_previous_time = millis();
 
     uint8_t h = humidity_sensor.readHumidity();
-
-    humidity.set(h);
+    humidity.set(h, !humidity_selected_state);
   }
 }
 
@@ -442,8 +448,14 @@ void temp_up(bool state)
 {
   if (state == PRESSED)
   {
-    temp.set(temp.get() + 1);
+    if (temp_selected_state == true)
+    {
+      temp_set++;
+    }
     change_color("t", TEXT_COLOR_SELECTED);
+    change_text("t", String(temp_set));
+    temp_selected_previous_time = millis();
+    temp_selected_state = true;
   }
 }
 
@@ -451,7 +463,14 @@ void humidity_up(bool state)
 {
   if (state == PRESSED)
   {
-    humidity.set(humidity.get() + 1);
+    if (humidity_selected_state == true)
+    {
+      humidity_set++;
+    }
+    change_color("h", TEXT_COLOR_SELECTED);
+    change_text("h", String(humidity_set));
+    humidity_selected_previous_time = millis();
+    humidity_selected_state = true;
   }
 }
 
@@ -459,8 +478,14 @@ void temp_down(bool state)
 {
   if (state == PRESSED)
   {
-    temp.set(temp.get() - 1);
-    change_color("t", TEXT_COLOR_DEFAULT);
+    if (temp_selected_state == true)
+    {
+      temp_set--;
+    }
+    change_color("t", TEXT_COLOR_SELECTED);
+    change_text("t", String(temp_set));
+    temp_selected_previous_time = millis();
+    temp_selected_state = true;
   }
 }
 
@@ -468,7 +493,44 @@ void humidity_down(bool state)
 {
   if (state == PRESSED)
   {
-    humidity.set(humidity.get() - 1);
+    if (humidity_selected_state == true)
+    {
+      humidity_set--;
+    }
+    change_color("h", TEXT_COLOR_SELECTED);
+    change_text("h", String(humidity_set));
+    humidity_selected_previous_time = millis();
+    humidity_selected_state = true;
+  }
+}
+
+void temp_selected_update()
+{
+  if (temp_selected_state == false)
+  {
+    return;
+  }
+
+  if (millis() > temp_selected_previous_time + temp_selected_timer)
+  {
+    temp.set(temp_sensor.getTempCByIndex(0));
+    change_color("t", TEXT_COLOR_DEFAULT);
+    temp_selected_state = false;
+  }
+}
+
+void humidity_selected_update()
+{
+  if (humidity_selected_state == false)
+  {
+    return;
+  }
+
+  if (millis() > humidity_selected_previous_time + humidity_selected_timer)
+  {
+    humidity.set(humidity_sensor.readHumidity());
+    change_color("h", TEXT_COLOR_DEFAULT);
+    humidity_selected_state = false;
   }
 }
 
@@ -570,4 +632,6 @@ void loop()
   fan_update();
 
   display_update();
+  temp_selected_update();
+  humidity_selected_update();
 }
