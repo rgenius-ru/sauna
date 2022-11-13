@@ -22,6 +22,7 @@
 #define MIN_ENDSTOP_PIN 35
 #define TEMP_SENSOR_PIN 32
 #define HUMIDITY_SENSOR_PIN 33
+#define BUZZER_PIN 4
 
 #define TEMP_MIN 50
 #define TEMP_MAX 80
@@ -91,7 +92,7 @@ uint32_t timer_previous_time = 0;
 uint16_t timer_interval_update = 1000; // ms
 
 uint32_t light_previous_time = 0;
-uint16_t light_flash_interval = 1000; // ms
+uint16_t light_flash_interval = 1000; // ms TODO 60000
 
 uint32_t buzzer_previous_time = 0;
 uint16_t buzzer_flash_interval = 1000; // ms
@@ -151,6 +152,7 @@ void disable_all_objects()
   digitalWrite(MOTOR_B_PIN, LOW);
   digitalWrite(VAPOR_PIN, HIGH);
   digitalWrite(HEATER_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
 
   vapor_enable = OFF;
   heater_enable = OFF;
@@ -168,6 +170,7 @@ void init_all_pins()
   pinMode(MOTOR_B_PIN, OUTPUT);
   pinMode(VAPOR_PIN, OUTPUT);
   pinMode(HEATER_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(TEMP_SENSOR_PIN, INPUT_PULLUP);
   pinMode(HUMIDITY_SENSOR_PIN, INPUT_PULLUP);
 
@@ -464,6 +467,9 @@ void power_disable()
   change_color("time", TEXT_COLOR_DISABLED);
   change_color("t_Cels", TEXT_COLOR_DISABLED);
   change_color("h_Perc", TEXT_COLOR_DISABLED);
+
+  light_flash_count = 0;
+  buzzer_flash_count = 0;
 }
 
 void power(bool state)
@@ -520,6 +526,16 @@ void fan(bool state)
 {
   button_update(fan_button, state);
   fan_enable = fan_button.is_on();
+}
+
+void timer(bool state)
+{
+  if (state == PRESSED)
+  {
+    timer_state = !timer_state;
+    Serial.println("timer_state: " + String(timer_state));
+  }
+  
 }
 
 void temp_up(bool state)
@@ -775,7 +791,17 @@ void ligh_update()
 
 void buzzer_update()
 {
+  if (buzzer_flash_count > 0)
+  {
+    if (millis() > buzzer_previous_time + buzzer_flash_interval)
+    {
+      buzzer_previous_time = millis();
+      
+      digitalWrite(BUZZER_PIN, !digitalRead(BUZZER_PIN));
 
+      buzzer_flash_count--;
+    }
+  }
 }
 
 void timer_update()
@@ -806,10 +832,14 @@ void timer_update()
         change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
       }
     }
-    else
+    
+    timer_time = timer_hours * 60 + timer_minutes;
+    
+    if (timer_time == 0)
     {
       timer_state = OFF;
       light_flash_count = LIGHT_FLASH_TIMES * 2;
+      buzzer_flash_count = BUZZER_FLASH_TIMES * 2;
     }
   }
 }
@@ -851,6 +881,10 @@ void display_update()
 
     case 6: // fan
       fan(state);
+      break;
+
+    case 7: // timer
+      timer(state);
       break;
 
     case 10: // temp up
