@@ -45,6 +45,8 @@ bool motor_direction = DIRECTION_TO_MAX;
 bool vapor_enable = OFF;
 bool heater_enable = OFF;
 bool fan_enable = OFF;
+bool temp_flash_state = false;
+bool humidity_flash_state = false;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -382,6 +384,94 @@ void power_disable()
   change_color("time", TEXT_COLOR_DISABLED);
 }
 
+void power(bool state)
+{
+  button_update(power_button, state);
+  digitalWrite(LED_PIN, power_button.is_on());
+  if (state == PRESSED)
+  {
+    if (power_button.is_on())
+    {
+      power_enable();
+    }
+    else
+    {
+      power_disable();
+    }
+  }
+}
+
+void move(bool state)
+{
+  button_update(move_button, state);
+  if (move_button.is_on())
+  {
+    motor_on();
+  }
+  else
+  {
+    motor_off();
+  }
+}
+
+void heater(bool state)
+{
+  button_update(heat_button, state);
+  heater_enable = heat_button.is_on();
+}
+
+void vapor(bool state)
+{
+  button_update(vapor_button, state);
+  vapor_enable = vapor_button.is_on();
+}
+
+void light(bool state)
+{
+  button_update(light_button, state);
+  digitalWrite(LIGHT_PIN, !light_button.is_on());
+}
+
+void fan(bool state)
+{
+  button_update(fan_button, state);
+  fan_enable = fan_button.is_on();
+}
+
+void temp_up(bool state)
+{
+  if (state == PRESSED)
+  {
+    temp.set(temp.get() + 1);
+    change_color("t", TEXT_COLOR_SELECTED);
+  }
+}
+
+void humidity_up(bool state)
+{
+  if (state == PRESSED)
+  {
+    humidity.set(humidity.get() + 1);
+  }
+}
+
+void temp_down(bool state)
+{
+  if (state == PRESSED)
+  {
+    temp.set(temp.get() - 1);
+    change_color("t", TEXT_COLOR_DEFAULT);
+  }
+}
+
+void humidity_down(bool state)
+{
+  if (state == PRESSED)
+  {
+    humidity.set(humidity.get() - 1);
+  }
+}
+
 void display_update()
 {
   bool state = RELEASED;
@@ -398,81 +488,43 @@ void display_update()
     switch (button)
     {
     case 1: // power
-      button_update(power_button, state);
-      digitalWrite(LED_PIN, power_button.is_on());
-      if (state == PRESSED)
-      {
-        if (power_button.is_on())
-        {
-          power_enable();
-        }
-        else
-        {
-          power_disable();
-        }
-      }
+      power(state);
       break;
 
     case 2: // move
-      button_update(move_button, state);
-      if (move_button.is_on())
-      {
-        motor_on();
-      }
-      else
-      {
-        motor_off();
-      }
+      move(state);
       break;
 
     case 3: // heater
-      button_update(heat_button, state);
-      heater_enable = heat_button.is_on();
+      heater(state);
       break;
 
     case 4: // light
-      button_update(light_button, state);
-      digitalWrite(LIGHT_PIN, !light_button.is_on());
+      light(state);
       break;
 
     case 5: // vapor
-      button_update(vapor_button, state);
-      vapor_enable = vapor_button.is_on();
+      vapor(state);
       break;
 
     case 6: // fan
-      button_update(fan_button, state);
-      fan_enable = fan_button.is_on();
+      fan(state);
       break;
 
     case 10: // temp up
-      if (state == PRESSED)
-      {
-        temp.set(temp.get() + 1);
-        change_color("t", TEXT_COLOR_SELECTED);
-      }
+      temp_up(state);
       break;
 
     case 11: // humidity up
-      if (state == PRESSED)
-      {
-        humidity.set(humidity.get() + 1);
-      }
+      humidity_up(state);
       break;
 
     case 12: // temp down
-      if (state == PRESSED)
-      {
-        temp.set(temp.get() - 1);
-        change_color("t", TEXT_COLOR_DEFAULT);
-      }
+      temp_down(state);
       break;
 
     case 13: // humidity down
-      if (state == PRESSED)
-      {
-        humidity.set(humidity.get() - 1);
-      }
+      humidity_down(state);
       break;
 
     default:
