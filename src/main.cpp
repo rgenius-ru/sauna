@@ -603,6 +603,8 @@ void setup()
   Serial.begin(9600);
   Serial2.begin(9600);
 
+  power_disable();
+
   buttons_init();
 
   temp_set = 27;
