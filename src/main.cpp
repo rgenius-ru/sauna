@@ -7,6 +7,8 @@
 #include "OneWire.h"
 #include "DallasTemperature.h"
 #include "DHT.h"
+#include "save_settings.h"
+
 
 #define LED_PIN 2
 #define LIGHT_PIN 19
@@ -21,9 +23,9 @@
 #define TEMP_SENSOR_PIN 32
 #define HUMIDITY_SENSOR_PIN 33
 
-#define TEMP_MIN 10 // 50
+#define TEMP_MIN 50
 #define TEMP_MAX 80
-#define HUMIDITY_MIN 10 // 40
+#define HUMIDITY_MIN 40
 #define HUMIDITY_MAX 80
 
 #define DHTTYPE DHT21 // DHT 21 (AM2301)
@@ -85,8 +87,8 @@ Button t_down_button = Button("t_down");
 Button h_up_button = Button("h_up");
 Button h_down_button = Button("h_down");
 
-PhysicalQuantity temp = PhysicalQuantity("t", TEMP_MIN, TEMP_MAX);
-PhysicalQuantity humidity = PhysicalQuantity("h", HUMIDITY_MIN, HUMIDITY_MAX);
+PhysicalQuantity temp = PhysicalQuantity("t", 0, 99);
+PhysicalQuantity humidity = PhysicalQuantity("h", 0, 99);
 
 uint8_t temp_set = 0;
 uint8_t humidity_set = 0;
@@ -450,7 +452,11 @@ void temp_up(bool state)
   {
     if (temp_selected_state == true)
     {
-      temp_set++;
+      if (temp_set < TEMP_MAX)
+      {
+        temp_set++;
+        save_temp_set(temp_set);
+      }
     }
     change_color("t", TEXT_COLOR_SELECTED);
     change_text("t", String(temp_set));
@@ -465,7 +471,11 @@ void humidity_up(bool state)
   {
     if (humidity_selected_state == true)
     {
-      humidity_set++;
+      if (humidity_set < HUMIDITY_MAX)
+      {
+        humidity_set++;
+        save_humidity_set(humidity_set);
+      }
     }
     change_color("h", TEXT_COLOR_SELECTED);
     change_text("h", String(humidity_set));
@@ -480,7 +490,11 @@ void temp_down(bool state)
   {
     if (temp_selected_state == true)
     {
-      temp_set--;
+      if (temp_set > TEMP_MIN)
+      {
+        temp_set--;
+        save_temp_set(temp_set);
+      }
     }
     change_color("t", TEXT_COLOR_SELECTED);
     change_text("t", String(temp_set));
@@ -495,7 +509,11 @@ void humidity_down(bool state)
   {
     if (humidity_selected_state == true)
     {
-      humidity_set--;
+      if (humidity_set > HUMIDITY_MIN)
+      {
+        humidity_set--;
+        save_humidity_set(humidity_set);
+      }
     }
     change_color("h", TEXT_COLOR_SELECTED);
     change_text("h", String(humidity_set));
@@ -607,8 +625,9 @@ void setup()
 
   buttons_init();
 
-  temp_set = 27;
-  humidity_set = 55;
+  eeprom_settings_init();
+  temp_set = read_eeprom_temp_set();
+  humidity_set = read_eeprom_humidity_set();
 
   temp_sensor.begin();
   temp_sensor.setResolution(9);
