@@ -12,7 +12,7 @@ class PhysicalQuantity{
         uint8_t max_value;
         uint8_t min_value;
 
-        void set(uint8_t value);
+        void set(uint8_t value, bool display_update = true);
         uint8_t get();
 
     private:
