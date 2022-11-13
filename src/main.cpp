@@ -33,6 +33,9 @@
 #define MM_MAX 99   // minutes
 #define MM_MIN 0    // minutes
 
+#define LIGHT_FLASH_TIMES 3
+#define BUZZER_FLASH_TIMES 3
+
 #define DHTTYPE DHT21 // DHT 21 (AM2301)
 
 #define TEXT_COLOR_DEFAULT 63320 // #F0E8C0 rgb(240,232,192)
@@ -55,6 +58,7 @@ bool fan_enable = OFF;
 bool temp_selected_state = false;
 bool humidity_selected_state = false;
 bool timer_selected_state = false;
+bool timer_state = false;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -83,6 +87,18 @@ uint16_t humidity_selected_timer = 3000; // ms
 uint32_t timer_selected_previous_time = 0;
 uint16_t timer_selected_timer = 3000; // ms
 
+uint32_t timer_previous_time = 0;
+uint16_t timer_interval_update = 1000; // ms
+
+uint32_t light_previous_time = 0;
+uint16_t light_flash_interval = 1000; // ms
+
+uint32_t buzzer_previous_time = 0;
+uint16_t buzzer_flash_interval = 1000; // ms
+
+uint16_t light_flash_count = 0;
+uint16_t buzzer_flash_count = 0;
+
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
 
@@ -107,6 +123,7 @@ PhysicalQuantity humidity = PhysicalQuantity("h", 0, 99);
 uint8_t temp_set = 0;
 uint8_t humidity_set = 0;
 
+uint8_t timer_time = 0;
 uint8_t timer_hours = 0;
 uint8_t timer_minutes = 0;
 
@@ -495,6 +512,8 @@ void light(bool state)
 {
   button_update(light_button, state);
   digitalWrite(LIGHT_PIN, !light_button.is_on());
+
+  light_flash_count = 0;
 }
 
 void fan(bool state)
@@ -613,6 +632,7 @@ void hh_up(bool state)
       if (timer_hours < HH_MAX)
       {
         timer_hours++;
+        timer_state = ON;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -636,6 +656,7 @@ void hh_down(bool state)
       if (timer_hours > HH_MIN)
       {
         timer_hours--;
+        timer_state = ON;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -659,6 +680,7 @@ void mm_up(bool state)
       if (timer_minutes < MM_MAX)
       {
         timer_minutes++;
+        timer_state = ON;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -682,6 +704,7 @@ void mm_down(bool state)
       if (timer_minutes > MM_MIN)
       {
         timer_minutes--;
+        timer_state = ON;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -732,6 +755,62 @@ void humidity_selected_update()
     humidity.set(humidity_sensor.readHumidity());
     change_color("h", TEXT_COLOR_DEFAULT);
     humidity_selected_state = false;
+  }
+}
+
+void ligh_update()
+{
+  if (light_flash_count > 0)
+  {
+    if (millis() > light_previous_time + light_flash_interval)
+    {
+      light_previous_time = millis();
+      
+      digitalWrite(LIGHT_PIN, !digitalRead(LIGHT_PIN));
+
+      light_flash_count--;
+    }
+  }
+}
+
+void buzzer_update()
+{
+
+}
+
+void timer_update()
+{
+  if (timer_state == OFF)
+  {
+    return;
+  }
+
+  if (millis() > timer_previous_time + timer_interval_update)
+  {
+    timer_previous_time = millis();
+    timer_time = timer_hours * 60 + timer_minutes;
+
+    if (timer_time > 0)
+    {
+      if (timer_selected_state == false)
+      {
+        if (timer_minutes > 0)
+        {
+          timer_minutes--;
+        }
+        else{
+          timer_minutes = 59;
+          timer_hours--;
+        }
+
+        change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+      }
+    }
+    else
+    {
+      timer_state = OFF;
+      light_flash_count = LIGHT_FLASH_TIMES * 2;
+    }
   }
 }
 
@@ -849,8 +928,13 @@ void loop()
   vapor_update();
   fan_update();
 
+  timer_update();
+
   display_update();
   temp_selected_update();
   humidity_selected_update();
   timer_selected_update();
+
+  ligh_update();
+  buzzer_update();
 }
