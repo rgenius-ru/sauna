@@ -87,6 +87,11 @@ Button t_down_button = Button("t_down");
 Button h_up_button = Button("h_up");
 Button h_down_button = Button("h_down");
 
+Button hh_up_button = Button("hh_up");
+Button hh_down_button = Button("hh_down");
+Button mm_up_button = Button("mm_up");
+Button mm_down_button = Button("mm_down");
+
 PhysicalQuantity temp = PhysicalQuantity("t", 0, 99);
 PhysicalQuantity humidity = PhysicalQuantity("h", 0, 99);
 
@@ -103,12 +108,6 @@ void disable_all_objects()
   digitalWrite(MOTOR_B_PIN, LOW);
   digitalWrite(VAPOR_PIN, HIGH);
   digitalWrite(HEATER_PIN, LOW);
-
-  move_button.off();
-  vapor_button.off();
-  fan_button.off();
-  heat_button.off();
-  light_button.off();
 
   vapor_enable = OFF;
   heater_enable = OFF;
@@ -148,18 +147,28 @@ void buttons_init()
   h_up_button.set_pics(up_normal, up_pressed, up_disable);
   h_down_button.set_pics(down_normal, down_pressed, down_disable);
 
-  power_button.init(ENABLE);
-  move_button.init(DISABLE);
+  hh_up_button.set_pics(up_normal, up_pressed, up_disable);
+  hh_down_button.set_pics(down_normal, down_pressed, down_disable);
+  mm_up_button.set_pics(up_normal, up_pressed, up_disable);
+  mm_down_button.set_pics(down_normal, down_pressed, down_disable);
 
-  vapor_button.init(DISABLE);
-  fan_button.init(DISABLE);
-  heat_button.init(DISABLE);
-  light_button.init(DISABLE);
+  power_button.init(ENABLE, true);
+  move_button.init(DISABLE, true);
+
+  vapor_button.init(DISABLE, true);
+  fan_button.init(DISABLE, true);
+  heat_button.init(DISABLE, true);
+  light_button.init(DISABLE, true);
 
   t_up_button.init(DISABLE);
   t_down_button.init(DISABLE);
   h_up_button.init(DISABLE);
   h_down_button.init(DISABLE);
+
+  hh_up_button.init(DISABLE);
+  hh_down_button.init(DISABLE);
+  mm_up_button.init(DISABLE);
+  mm_down_button.init(DISABLE);
 }
 
 void button_update(LatchingButton &button, bool state)
@@ -363,33 +372,55 @@ void power_enable()
   light_button.enable();
   vapor_button.enable();
   fan_button.enable();
+
   t_up_button.enable();
   t_down_button.enable();
   h_up_button.enable();
   h_down_button.enable();
 
+  hh_up_button.enable();
+  hh_down_button.enable();
+  mm_up_button.enable();
+  mm_down_button.enable();
+
   change_color("t", TEXT_COLOR_DEFAULT);
   change_color("h", TEXT_COLOR_DEFAULT);
   change_color("time", TEXT_COLOR_DEFAULT);
+  change_color("t_Cels", TEXT_COLOR_DEFAULT);
+  change_color("h_Perc", TEXT_COLOR_DEFAULT);
 }
 
 void power_disable()
 {
   disable_all_objects();
 
+  move_button.off();
+  vapor_button.off();
+  fan_button.off();
+  heat_button.off();
+  light_button.off();
+
   move_button.disable();
   heat_button.disable();
   light_button.disable();
   vapor_button.disable();
   fan_button.disable();
+
   t_up_button.disable();
   t_down_button.disable();
   h_up_button.disable();
   h_down_button.disable();
 
+  hh_up_button.disable();
+  hh_down_button.disable();
+  mm_up_button.disable();
+  mm_down_button.disable();
+
   change_color("t", TEXT_COLOR_DISABLED);
   change_color("h", TEXT_COLOR_DISABLED);
   change_color("time", TEXT_COLOR_DISABLED);
+  change_color("t_Cels", TEXT_COLOR_DISABLED);
+  change_color("h_Perc", TEXT_COLOR_DISABLED);
 }
 
 void power(bool state)
@@ -448,6 +479,11 @@ void fan(bool state)
 
 void temp_up(bool state)
 {
+  if (not t_up_button.is_enable())
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
     if (temp_selected_state == true)
@@ -467,6 +503,11 @@ void temp_up(bool state)
 
 void humidity_up(bool state)
 {
+  if (not h_up_button.is_enable())
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
     if (humidity_selected_state == true)
@@ -486,6 +527,11 @@ void humidity_up(bool state)
 
 void temp_down(bool state)
 {
+  if (not t_down_button.is_enable())
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
     if (temp_selected_state == true)
@@ -505,6 +551,11 @@ void temp_down(bool state)
 
 void humidity_down(bool state)
 {
+  if (not h_down_button.is_enable())
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
     if (humidity_selected_state == true)
@@ -620,8 +671,6 @@ void setup()
 
   Serial.begin(9600);
   Serial2.begin(9600);
-
-  power_disable();
 
   buttons_init();
 
