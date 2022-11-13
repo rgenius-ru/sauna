@@ -19,15 +19,18 @@ void Button::set_pics(uint8_t pic, uint8_t pic2, uint8_t disabled_pic) {
     _disabled_pic = disabled_pic;
 }
 
-void Button::init(bool enabled) {
+void Button::init(bool enabled, bool need_change_pics) {
     _enabled = enabled;
     _press_state = RELEASED;
 
-    if (_enabled){
-        _change_pics(_pic, _pic2);
-    }
-    else{
-        _change_pics(_disabled_pic, _disabled_pic);
+    if (need_change_pics)
+    {
+        if (_enabled){
+            _change_pics(_pic, _pic2);
+        }
+        else{
+            _change_pics(_disabled_pic, _disabled_pic);
+        }
     }
 }
 
@@ -65,7 +68,7 @@ void LatchingButton::set_pics(uint8_t on_pic, uint8_t on_pic2, uint8_t off_pic, 
     _disabled_pic = disabled_pic;
 }
 
-void LatchingButton::init(bool enabled) {
+void LatchingButton::init(bool enabled, bool need_change_pics) {
     _enabled = enabled;
     _press_state = RELEASED;
     _on = OFF;

@@ -9,7 +9,7 @@ class Button {
     public:
         Button(String obj_name);
         void set_pics(uint8_t pic, uint8_t pic2, uint8_t disabled_pic);
-        void init(bool enabled);
+        void init(bool enabled, bool need_change_pics = false);
         
         void enable();
         void disable();
@@ -37,7 +37,7 @@ class LatchingButton : public Button {
     public:
         using Button::Button;
         void set_pics(uint8_t on_pic, uint8_t on_pic2, uint8_t off_pic, uint8_t off_pic2, uint8_t disabled_pic);
-        void init(bool enabled);
+        void init(bool enabled, bool need_change_pics = false);
         
         void enable();
         void disable();
