@@ -475,6 +475,8 @@ void power_disable()
   change_color("t_Cels", TEXT_COLOR_DISABLED);
   change_color("h_Perc", TEXT_COLOR_DISABLED);
 
+  timer_state = OFF;
+  timer_time = 0;
   timer_hours = 0;
   timer_minutes = 0;
   change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
@@ -804,6 +806,11 @@ void humidity_selected_update()
 
 void ligh_update()
 {
+  if (not power_button.is_on())
+  {
+    return;
+  }
+
   if (light_flash_count > 0)
   {
     if (millis() > light_previous_time + light_flash_interval)
@@ -819,6 +826,11 @@ void ligh_update()
 
 void buzzer_update()
 {
+  if (not power_button.is_on())
+  {
+    return;
+  }
+
   if (buzzer_flash_count > 0)
   {
     if (millis() > buzzer_previous_time + buzzer_flash_interval)
