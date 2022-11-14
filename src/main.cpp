@@ -97,7 +97,7 @@ uint32_t colon_previous_time = 0;
 uint16_t colon_interval_update = 500; // ms
 
 uint32_t light_previous_time = 0;
-uint16_t light_flash_interval = 1000; // ms TODO 60000
+uint16_t light_flash_interval = 60000; // ms
 
 uint32_t buzzer_previous_time = 0;
 uint16_t buzzer_flash_interval = 1000; // ms
