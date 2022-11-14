@@ -135,6 +135,45 @@ uint8_t timer_time = 0;
 uint8_t timer_hours = 0;
 uint8_t timer_minutes = 0;
 
+
+void change_to_page1()
+{
+  Serial.println();
+  Serial.println();
+  Serial.println();
+
+  // read nextion
+  while (Serial2.available() > 0) {
+    // uint8_t byte_read = Serial2.read();
+    // Serial.print(byte_read, HEX);
+    Serial.println(Serial2.readString());
+  }
+  Serial.println();
+
+  for (uint8_t i=0; i<10; i++)
+  {
+    Serial2.print("page 1");
+    Serial2.write(0xFF);
+    Serial2.write(0xFF);
+    Serial2.write(0xFF);
+    delay(500);
+
+    String str = "";
+    while (Serial2.available() > 0) {
+      str += char(Serial2.read());
+      // Serial.println(Serial2.readString());
+    }
+    Serial.println(str);
+
+    if (str == "page1 initialized")
+    {
+      break;
+    }
+
+    Serial.println();
+  }
+}
+
 String format_two_digits(uint8_t number)
 {
   String str = "";
@@ -1021,6 +1060,12 @@ void setup()
   Serial.begin(9600);
   Serial2.begin(9600);
 
+  digitalWrite(LED_PIN, HIGH);
+  delay(5000);
+  digitalWrite(LED_PIN, LOW);
+
+  change_to_page1();
+ 
   buttons_init();
 
   eeprom_settings_init();
@@ -1031,11 +1076,6 @@ void setup()
   temp_sensor.setResolution(9);
 
   humidity_sensor.begin();
-
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_PIN, LOW);
-  delay(1000);
 }
 
 void loop()
