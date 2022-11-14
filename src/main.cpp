@@ -476,6 +476,8 @@ void power_disable()
   change_color("h_Perc", TEXT_COLOR_DISABLED);
 
   timer_state = OFF;
+  timer_selected_state = false;
+  
   timer_time = 0;
   timer_hours = 0;
   timer_minutes = 0;
@@ -548,6 +550,11 @@ void timer(bool state)
     return;
   }
 
+  if (timer_selected_state == true)
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
     if (timer_time > 0)
@@ -562,6 +569,7 @@ void timer(bool state)
       change_color("time", TEXT_COLOR_DEFAULT);
     }
     else{
+      change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
       change_color("time", TEXT_COLOR_DISABLED);
     }
   }
@@ -762,6 +770,11 @@ void mm_down(bool state)
 
 void timer_selected_update()
 {
+  if (not power_button.is_on())
+  {
+    return;
+  }
+
   if (timer_selected_state == false)
   {
     return;
@@ -842,11 +855,20 @@ void buzzer_update()
       buzzer_flash_count--;
     }
   }
+  else
+  {
+    digitalWrite(BUZZER_PIN, LOW);
+  }
 }
 
 void colon_update()
 {
   if (timer_state == OFF)
+  {
+    return;
+  }
+
+  if (timer_selected_state == true)
   {
     return;
   }
@@ -901,6 +923,7 @@ void timer_update()
     
     if (timer_time == 0)
     {
+      change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
       change_color("time", TEXT_COLOR_DISABLED);
       timer_state = OFF;
       light_flash_count = LIGHT_FLASH_TIMES * 2;
