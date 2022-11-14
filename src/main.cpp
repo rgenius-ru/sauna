@@ -43,6 +43,8 @@
 #define TEXT_COLOR_SELECTED 6371 // 1791 // #00DEFF rgb(0,222,255) 1631 // #00C8F8 rgb(0,200,248)
 #define TEXT_COLOR_DISABLED 6371 // #1C1D1F rgb(28,29,31)
 
+#define COLON ":"
+
 OneWire oneWire(TEMP_SENSOR_PIN);
 DallasTemperature temp_sensor(&oneWire);
 
@@ -91,6 +93,9 @@ uint16_t timer_selected_timer = 3000; // ms
 uint32_t timer_previous_time = 0;
 uint16_t timer_interval_update = 1000; // ms
 
+uint32_t colon_previous_time = 0;
+uint16_t colon_interval_update = 500; // ms
+
 uint32_t light_previous_time = 0;
 uint16_t light_flash_interval = 1000; // ms TODO 60000
 
@@ -99,6 +104,8 @@ uint16_t buzzer_flash_interval = 1000; // ms
 
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
+
+String colon = COLON;
 
 LatchingButton power_button = LatchingButton("power");
 LatchingButton move_button = LatchingButton("move");
@@ -825,6 +832,30 @@ void buzzer_update()
   }
 }
 
+void colon_update()
+{
+  if (timer_state == OFF)
+  {
+    return;
+  }
+  
+  if (millis() > colon_previous_time + colon_interval_update)
+  {
+    colon_previous_time = millis();
+
+    if (colon == ":")
+    {
+      colon = " ";
+    }
+    else
+    {
+      colon = ":";
+    }
+
+    change_text("time", format_two_digits(timer_hours) + colon + format_two_digits(timer_minutes));
+  }
+}
+
 void timer_update()
 {
   if (timer_state == OFF)
@@ -850,7 +881,7 @@ void timer_update()
           timer_hours--;
         }
 
-        change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+        change_text("time", format_two_digits(timer_hours) + colon + format_two_digits(timer_minutes));
       }
     }
     
@@ -990,6 +1021,7 @@ void loop()
   temp_selected_update();
   humidity_selected_update();
   timer_selected_update();
+  colon_update();
 
   ligh_update();
   buzzer_update();
