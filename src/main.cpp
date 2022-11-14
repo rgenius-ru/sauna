@@ -431,7 +431,7 @@ void power_enable()
 
   change_color("t", TEXT_COLOR_DEFAULT);
   change_color("h", TEXT_COLOR_DEFAULT);
-  change_color("time", TEXT_COLOR_DEFAULT);
+  // change_color("time", TEXT_COLOR_DEFAULT);
   change_color("t_Cels", TEXT_COLOR_DEFAULT);
   change_color("h_Perc", TEXT_COLOR_DEFAULT);
 }
@@ -467,6 +467,10 @@ void power_disable()
   change_color("time", TEXT_COLOR_DISABLED);
   change_color("t_Cels", TEXT_COLOR_DISABLED);
   change_color("h_Perc", TEXT_COLOR_DISABLED);
+
+  timer_hours = 0;
+  timer_minutes = 0;
+  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
 
   light_flash_count = 0;
   buzzer_flash_count = 0;
@@ -530,10 +534,27 @@ void fan(bool state)
 
 void timer(bool state)
 {
+  if (not power_button.is_on())
+  {
+    return;
+  }
+
   if (state == PRESSED)
   {
-    timer_state = !timer_state;
-    Serial.println("timer_state: " + String(timer_state));
+    if (timer_time > 0)
+    {
+      timer_state = !timer_state;
+      Serial.println("timer_state: " + String(timer_state));
+    }
+    
+
+    if (timer_state == true)
+    {
+      change_color("time", TEXT_COLOR_DEFAULT);
+    }
+    else{
+      change_color("time", TEXT_COLOR_DISABLED);
+    }
   }
   
 }
@@ -837,6 +858,7 @@ void timer_update()
     
     if (timer_time == 0)
     {
+      change_color("time", TEXT_COLOR_DISABLED);
       timer_state = OFF;
       light_flash_count = LIGHT_FLASH_TIMES * 2;
       buzzer_flash_count = BUZZER_FLASH_TIMES * 2;
