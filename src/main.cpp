@@ -91,13 +91,13 @@ uint32_t timer_selected_previous_time = 0;
 uint16_t timer_selected_timer = 3000; // ms
 
 uint32_t timer_previous_time = 0;
-uint16_t timer_interval_update = 1000; // ms
+uint16_t timer_interval_update = 60000; // ms
 
 uint32_t colon_previous_time = 0;
 uint16_t colon_interval_update = 500; // ms
 
 uint32_t light_previous_time = 0;
-uint16_t light_flash_interval = 60000; // ms
+uint16_t light_flash_interval = 1000; // ms
 
 uint32_t buzzer_previous_time = 0;
 uint16_t buzzer_flash_interval = 1000; // ms
