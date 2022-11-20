@@ -10,13 +10,15 @@
 #include "save_settings.h"
 
 
+#define RESERVED_RELAY_PIN 14
+
 #define LED_PIN 2
 #define LIGHT_PIN 19
-#define FAN_PIN 14
+#define FAN_PIN 27
 #define MOTOR_ENABLE_PIN 18
 #define MOTOR_A_PIN 21
 #define MOTOR_B_PIN 5
-#define VAPOR_PIN 27
+#define VAPOR_PIN 25
 #define HEATER_PIN 26
 #define MAX_ENDSTOP_PIN 34
 #define MIN_ENDSTOP_PIN 35
@@ -411,7 +413,7 @@ void vapor_update()
 {
   if (not vapor_enable)
   {
-    digitalWrite(VAPOR_PIN, HIGH);
+    digitalWrite(VAPOR_PIN, LOW);
     return;
   }
 
@@ -423,11 +425,11 @@ void vapor_update()
 
     if (h < humidity_set)
     {
-      digitalWrite(VAPOR_PIN, LOW);
+      digitalWrite(VAPOR_PIN, HIGH);
     }
     else if (h > humidity_set)
     {
-      digitalWrite(VAPOR_PIN, HIGH);
+      digitalWrite(VAPOR_PIN, LOW);
     }
   }
 }
