@@ -720,17 +720,14 @@ void hh_up(bool state)
 
   if (state == PRESSED)
   {
-    if (timer_selected_state == true)
+    timer_state = ON;
+    if (timer_hours < HH_MAX)
     {
-      timer_state = ON;
-      if (timer_hours < HH_MAX)
-      {
-        timer_hours++;
-      }
-      else
-      {
-        timer_hours = HH_MIN;
-      }
+      timer_hours++;
+    }
+    else
+    {
+      timer_hours = HH_MIN;
     }
     change_color("time", TEXT_COLOR_SELECTED);
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
@@ -748,17 +745,14 @@ void hh_down(bool state)
 
   if (state == PRESSED)
   {
-    if (timer_selected_state == true)
+    timer_state = ON;
+    if (timer_hours > HH_MIN)
     {
-      timer_state = ON;
-      if (timer_hours > HH_MIN)
-      {
-        timer_hours--;
-      }
-      else
-      {
-        timer_hours = HH_MAX;
-      }
+      timer_hours--;
+    }
+    else
+    {
+      timer_hours = HH_MAX;
     }
     change_color("time", TEXT_COLOR_SELECTED);
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
@@ -776,17 +770,14 @@ void mm_up(bool state)
 
   if (state == PRESSED)
   {
-    if (timer_selected_state == true)
+    timer_state = ON;
+    if (timer_minutes < MM_MAX)
     {
-      timer_state = ON;
-      if (timer_minutes < MM_MAX)
-      {
-        timer_minutes++;
-      }
-      else
-      {
-        timer_minutes = MM_MIN;
-      }
+      timer_minutes++;
+    }
+    else
+    {
+      timer_minutes = MM_MIN;
     }
     change_color("time", TEXT_COLOR_SELECTED);
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
@@ -804,17 +795,14 @@ void mm_down(bool state)
 
   if (state == PRESSED)
   {
-    if (timer_selected_state == true)
+    timer_state = ON;
+    if (timer_minutes > MM_MIN)
     {
-      timer_state = ON;
-      if (timer_minutes > MM_MIN)
-      {
-        timer_minutes--;
-      }
-      else
-      {
-        timer_minutes = MM_MAX;
-      }
+      timer_minutes--;
+    }
+    else
+    {
+      timer_minutes = MM_MAX;
     }
     change_color("time", TEXT_COLOR_SELECTED);
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
