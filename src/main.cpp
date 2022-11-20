@@ -29,9 +29,9 @@
 #define HUMIDITY_MIN 40
 #define HUMIDITY_MAX 80
 
-#define HH_MAX 99   // hours
+#define HH_MAX 23   // hours
 #define HH_MIN 0    // hours
-#define MM_MAX 99   // minutes
+#define MM_MAX 59   // minutes
 #define MM_MIN 0    // minutes
 
 #define LIGHT_FLASH_TIMES 3
@@ -722,10 +722,14 @@ void hh_up(bool state)
   {
     if (timer_selected_state == true)
     {
+      timer_state = ON;
       if (timer_hours < HH_MAX)
       {
         timer_hours++;
-        timer_state = ON;
+      }
+      else
+      {
+        timer_hours = HH_MIN;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -746,10 +750,14 @@ void hh_down(bool state)
   {
     if (timer_selected_state == true)
     {
+      timer_state = ON;
       if (timer_hours > HH_MIN)
       {
         timer_hours--;
-        timer_state = ON;
+      }
+      else
+      {
+        timer_hours = HH_MAX;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -770,10 +778,14 @@ void mm_up(bool state)
   {
     if (timer_selected_state == true)
     {
+      timer_state = ON;
       if (timer_minutes < MM_MAX)
       {
         timer_minutes++;
-        timer_state = ON;
+      }
+      else
+      {
+        timer_minutes = MM_MIN;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
@@ -794,10 +806,14 @@ void mm_down(bool state)
   {
     if (timer_selected_state == true)
     {
+      timer_state = ON;
       if (timer_minutes > MM_MIN)
       {
         timer_minutes--;
-        timer_state = ON;
+      }
+      else
+      {
+        timer_minutes = MM_MAX;
       }
     }
     change_color("time", TEXT_COLOR_SELECTED);
