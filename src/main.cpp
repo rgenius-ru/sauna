@@ -198,7 +198,7 @@ void disable_all_objects()
   digitalWrite(MOTOR_ENABLE_PIN, HIGH);
   digitalWrite(MOTOR_A_PIN, HIGH);
   digitalWrite(MOTOR_B_PIN, LOW);
-  digitalWrite(VAPOR_PIN, HIGH);
+  digitalWrite(VAPOR_PIN, LOW);
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
 
