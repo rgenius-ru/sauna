@@ -834,6 +834,12 @@ void timer_selected_update()
 
 void temp_selected_update()
 {
+  if (not power_button.is_on())
+  {
+    temp_selected_state = false;
+    return;
+  }
+
   if (temp_selected_state == false)
   {
     return;
@@ -849,6 +855,12 @@ void temp_selected_update()
 
 void humidity_selected_update()
 {
+  if (not power_button.is_on())
+  {
+    humidity_selected_state = false;
+    return;
+  }
+
   if (humidity_selected_state == false)
   {
     return;
