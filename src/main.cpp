@@ -110,7 +110,8 @@ uint16_t buzzer_flash_count = 0;
 String colon = COLON;
 
 LatchingButton power_button = LatchingButton("power");
-LatchingButton move_button = LatchingButton("move");
+LatchingButton move_open_button = LatchingButton("move_open");
+LatchingButton move_close_button = LatchingButton("move_close");
 
 LatchingButton vapor_button = LatchingButton("vap");
 LatchingButton fan_button = LatchingButton("fan");
@@ -229,12 +230,13 @@ void init_all_pins()
 void buttons_init()
 {
   power_button.set_pics(big_on_normal, big_on_pressed, big_off_normal, big_off_pressed, big_disable_normal);
-  move_button.set_pics(big_on_normal, big_on_pressed, big_off_normal, big_off_pressed, big_disable_normal);
+  move_open_button.set_pics(open_on_normal, open_on_pressed, open_off_normal, open_off_pressed, open_disable_normal);
+  move_close_button.set_pics(close_on_normal, close_on_pressed, close_off_normal, close_off_pressed, close_disable_normal);
 
-  vapor_button.set_pics(small_on_normal, small_on_pressed, small_off_normal, small_off_pressed, small_disable_normal);
-  fan_button.set_pics(small_on_normal, small_on_pressed, small_off_normal, small_off_pressed, small_disable_normal);
-  heat_button.set_pics(small_on_normal, small_on_pressed, small_off_normal, small_off_pressed, small_disable_normal);
-  light_button.set_pics(small_on_normal, small_on_pressed, small_off_normal, small_off_pressed, small_disable_normal);
+  vapor_button.set_pics(vapor_on_normal, vapor_on_pressed, vapor_off_normal, vapor_off_pressed, vapor_disable_normal);
+  fan_button.set_pics(cooler_on_normal, cooler_on_pressed, cooler_off_normal, cooler_off_pressed, cooler_disable_normal);
+  heat_button.set_pics(heater_on_normal, heater_on_pressed, heater_off_normal, heater_off_pressed, heater_disable_normal);
+  light_button.set_pics(light_on_normal, light_on_pressed, light_off_normal, light_off_pressed, light_disable_normal);
 
   t_up_button.set_pics(up_normal, up_pressed, up_disable);
   t_down_button.set_pics(down_normal, down_pressed, down_disable);
@@ -247,7 +249,8 @@ void buttons_init()
   mm_down_button.set_pics(down_normal, down_pressed, down_disable);
 
   power_button.init(ENABLE, true);
-  move_button.init(DISABLE, true);
+  move_open_button.init(ENABLE, true);
+  move_close_button.init(DISABLE, true);
 
   vapor_button.init(DISABLE, true);
   fan_button.init(DISABLE, true);
@@ -345,13 +348,13 @@ void motor_update()
     if (motor_direction == DIRECTION_TO_MAX and max_endstop_state == CLOSE)
     {
       motor_off();
-      move_button.off();
+      move_open_button.off();
       motor_direction = DIRECTION_TO_MIN;
       motor_set_direction(motor_direction);
     }else if(motor_direction == DIRECTION_TO_MIN and min_endstop_state == CLOSE)
     {
       motor_off();
-      move_button.off();
+      move_open_button.off();
       motor_direction = DIRECTION_TO_MAX;
       motor_set_direction(motor_direction);
     }
@@ -461,7 +464,8 @@ void fan_update()
 
 void power_enable()
 {
-  move_button.enable();
+  move_open_button.disable();
+  move_close_button.enable();
   heat_button.enable();
   light_button.enable();
   vapor_button.enable();
@@ -488,13 +492,14 @@ void power_disable()
 {
   disable_all_objects();
 
-  move_button.off();
+  // move_open_button.off();
+  move_close_button.off();
   vapor_button.off();
   fan_button.off();
   heat_button.off();
   light_button.off();
 
-  move_button.disable();
+  move_open_button.disable();
   heat_button.disable();
   light_button.disable();
   vapor_button.disable();
@@ -545,10 +550,23 @@ void power(bool state)
   }
 }
 
-void move(bool state)
+void move_open(bool state)
 {
-  button_update(move_button, state);
-  if (move_button.is_on())
+  button_update(move_open_button, state);
+  if (move_open_button.is_on())
+  {
+    motor_on();
+  }
+  else
+  {
+    motor_off();
+  }
+}
+
+void move_close(bool state)
+{
+  button_update(move_close_button, state);
+  if (move_close_button.is_on())
   {
     motor_on();
   }
@@ -1008,8 +1026,8 @@ void display_update()
       power(state);
       break;
 
-    case 2: // move
-      move(state);
+    case 2: // move open
+      move_open(state);
       break;
 
     case 3: // heater
@@ -1062,6 +1080,10 @@ void display_update()
 
     case 17: // mm down
       mm_down(state);
+      break;
+
+    case 20: // move close
+      move_close(state);
       break;
 
     default:
