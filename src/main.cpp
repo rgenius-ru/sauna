@@ -8,6 +8,7 @@
 #include "DallasTemperature.h"
 #include "DHT.h"
 #include "save_settings.h"
+#include "errors.h"
 
 
 #define RESERVED_RELAY_PIN 14
@@ -106,8 +107,15 @@ uint16_t light_flash_interval = 1000; // ms
 uint32_t buzzer_previous_time = 0;
 uint16_t buzzer_flash_interval = 1000; // ms
 
+uint32_t protection_check_previous_time = 0;
+uint16_t protection_check_interval = 1000; // ms
+
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
+
+uint8_t error_id = ERROR_NO_ERROR;
+
+uint8_t page_id_now = LOGO_PAGE_ID;
 
 String colon = COLON;
 
@@ -141,43 +149,7 @@ uint8_t timer_hours = 0;
 uint8_t timer_minutes = 0;
 
 
-void change_to_page1()
-{
-  Serial.println();
-  Serial.println();
-  Serial.println();
 
-  // read nextion
-  while (Serial2.available() > 0) {
-    // uint8_t byte_read = Serial2.read();
-    // Serial.print(byte_read, HEX);
-    Serial.println(Serial2.readString());
-  }
-  Serial.println();
-
-  for (uint8_t i=0; i<10; i++)
-  {
-    Serial2.print("page 1");
-    Serial2.write(0xFF);
-    Serial2.write(0xFF);
-    Serial2.write(0xFF);
-    delay(500);
-
-    String str = "";
-    while (Serial2.available() > 0) {
-      str += char(Serial2.read());
-      // Serial.println(Serial2.readString());
-    }
-    Serial.println(str);
-
-    if (str == "page1 initialized")
-    {
-      break;
-    }
-
-    Serial.println();
-  }
-}
 
 String format_two_digits(uint8_t number)
 {
@@ -373,8 +345,24 @@ void temp_update()
     temp_sensor.requestTemperatures();
     temp_sensor.setWaitForConversion(true);
 
-    uint8_t t = temp_sensor.getTempCByIndex(0);
-    temp.set(t, !temp_selected_state);
+    float t = temp_sensor.getTempCByIndex(0);
+    if (t == DEVICE_DISCONNECTED_C or t == 129 or t < 0)
+    {
+      t = 0;
+      error_id = ERROR_TEMP_SENSOR_DISCONNECTED;
+    }
+    else if (t > temp.max_value + 5)
+    {
+      t = 99;
+      error_id = ERROR_TEMP_SENSOR_OVERHEAT;
+    }
+
+    if (error_id > 0)
+    {
+      Serial.println(get_error_text(error_id));
+    }
+
+    temp.set(uint8_t(t), !temp_selected_state);
   }
 }
 
@@ -1044,6 +1032,42 @@ void timer_update()
   }
 }
 
+void stop_controller()
+{
+  while (true)
+  {
+    delay(UINT32_MAX);
+  }
+}
+
+void protection_check()
+{
+  if (millis() > protection_check_previous_time + protection_check_interval)
+  {
+    if (error_id == 0)
+    {
+      return;
+    }
+      
+
+    if (page_id_now == MAIN_PAGE_ID)
+    {
+      power_disable();
+
+      power_button.disable();
+      move_open_button.disable();
+      move_close_button.disable();
+    }
+    else
+    {
+      disable_all_objects();
+    }
+
+    error_show(get_error_text(error_id));
+    stop_controller();
+  }
+}
+
 void display_update()
 {
   bool state = RELEASED;
@@ -1141,7 +1165,22 @@ void setup()
   delay(5000);
   digitalWrite(LED_PIN, LOW);
 
-  change_to_page1();
+  // read nextion
+  while (Serial2.available() > 0) {
+    Serial.println(Serial2.readString());
+  }
+  Serial.println();
+
+  temp_sensor.begin();
+  temp_sensor.setResolution(9);
+  humidity_sensor.begin();
+
+  temp_update();
+  humidity_update();
+
+  protection_check();
+
+  change_page_to(MAIN_PAGE_ID);
  
   buttons_init();
 
@@ -1153,11 +1192,6 @@ void setup()
   timer_minutes = read_eeprom_timer_minutes_set();
   timer_time = timer_hours * 60 + timer_minutes;
   // change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
-
-  temp_sensor.begin();
-  temp_sensor.setResolution(9);
-
-  humidity_sensor.begin();
 }
 
 void loop()
@@ -1182,4 +1216,6 @@ void loop()
 
   ligh_update();
   buzzer_update();
+
+  protection_check();
 }
