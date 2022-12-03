@@ -47,6 +47,22 @@ bool save_timer_set(uint8_t hours, uint8_t minutes){
     return result;
 }
 
+bool save_button_temp_state(bool state){
+    return save(button_temp_state_addr, state);
+}
+
+bool save_button_light_state(bool state){
+    return save(button_light_state_addr, state);
+}
+
+bool save_button_cooler_state(bool state){
+    return save(button_cooler_state_addr, state);
+}
+
+bool save_button_vapor_state(bool state){
+    return save(button_vapor_state_addr, state);
+}
+
 
 uint8_t read_eeprom_temp_set(){
     uint8_t temp = 0xff;
@@ -74,6 +90,34 @@ uint8_t read_eeprom_timer_minutes_set(){
     EEPROM.get(timer_minutes_set_addr, minutes); 
 
     return minutes;
+}
+
+bool read_eeprom_button_temp_state(){
+    uint8_t state = 0xff;
+    EEPROM.get(button_temp_state_addr, state); 
+
+    return state;
+}
+
+bool read_eeprom_button_light_state(){
+    uint8_t state = 0xff;
+    EEPROM.get(button_light_state_addr, state); 
+
+    return state;
+}
+
+bool read_eeprom_button_cooler_state(){
+    uint8_t state = 0xff;
+    EEPROM.get(button_cooler_state_addr, state); 
+
+    return state;
+}
+
+bool read_eeprom_button_vapor_state(){
+    uint8_t state = 0xff;
+    EEPROM.get(button_vapor_state_addr, state); 
+
+    return state;
 }
 
 
