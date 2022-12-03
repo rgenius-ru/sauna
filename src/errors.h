@@ -5,9 +5,11 @@
 #include "Arduino.h"
 
 
-#define ERROR_TEMP_SENSOR_DISCONNECTED "Датчик температуры отключен" //"Error: Could not read temperature data"
-#define ERROR_TEMP_SENSOR_OVERHEAT "Перегрев печи (t > 100 С)" // "Error: Overheat temperature" 
+#define ERROR_TEMP_SENSOR_DISCONNECTED "Датчик температуры отключен" // "Error: Could not read temperature data"
+#define ERROR_TEMP_SENSOR_OVERHEAT "Перегрев воздуха" // "Error: Overheat temperature" 
 
+#define ERROR_HUMIDITY_SENSOR_DISCONNECTED "Датчик влажности отключен" // "Failed to read from DHT sensor!"
+#define ERROR_HUMIDITY_SENSOR_OVERVAPOR "Переувлажнение воздуха"
 
 struct Error {
   bool has_error;
