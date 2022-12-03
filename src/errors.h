@@ -5,15 +5,14 @@
 #include "Arduino.h"
 
 
-#define ERROR_NO_ERROR 0
-#define ERROR_TEMP_SENSOR_DISCONNECTED 1
-#define ERROR_TEMP_SENSOR_OVERHEAT 2
-
-#define ERROR_TEMP_SENSOR_DISCONNECTED_TEXT "Error: Could not read temperature data"
-#define ERROR_TEMP_SENSOR_OVERHEAT_TEXT "Error: Overheat temperature" 
+#define ERROR_TEMP_SENSOR_DISCONNECTED "Датчик температуры отключен" //"Error: Could not read temperature data"
+#define ERROR_TEMP_SENSOR_OVERHEAT "Перегрев печи (t > 100 С)" // "Error: Overheat temperature" 
 
 
-String get_error_text(uint8_t error_id);
+struct Error {
+  bool has_error;
+  String text;
+};
 
 
 #endif // ERRORS_H

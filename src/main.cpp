@@ -113,8 +113,6 @@ uint16_t protection_check_interval = 1000; // ms
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
 
-uint8_t error_id = ERROR_NO_ERROR;
-
 uint8_t page_id_now = LOGO_PAGE_ID;
 
 String colon = COLON;
@@ -148,8 +146,14 @@ uint8_t timer_time = 0;
 uint8_t timer_hours = 0;
 uint8_t timer_minutes = 0;
 
+Error error;
 
 
+void error_set(String text)
+{
+    error.has_error = true;
+    error.text = "Ошибка: \r\n" + text;
+}
 
 String format_two_digits(uint8_t number)
 {
@@ -349,17 +353,17 @@ void temp_update()
     if (t == DEVICE_DISCONNECTED_C or t == 129 or t < 0)
     {
       t = 0;
-      error_id = ERROR_TEMP_SENSOR_DISCONNECTED;
+      error_set(ERROR_TEMP_SENSOR_DISCONNECTED);
     }
     else if (t > temp.max_value + 5)
     {
       t = 99;
-      error_id = ERROR_TEMP_SENSOR_OVERHEAT;
+      error_set(ERROR_TEMP_SENSOR_OVERHEAT);
     }
 
-    if (error_id > 0)
+    if (error.has_error)
     {
-      Serial.println(get_error_text(error_id));
+      Serial.println(error.text);
     }
 
     temp.set(uint8_t(t), !temp_selected_state);
@@ -1044,12 +1048,11 @@ void protection_check()
 {
   if (millis() > protection_check_previous_time + protection_check_interval)
   {
-    if (error_id == 0)
+    if (not error.has_error)
     {
       return;
     }
       
-
     if (page_id_now == MAIN_PAGE_ID)
     {
       power_disable();
@@ -1063,7 +1066,7 @@ void protection_check()
       disable_all_objects();
     }
 
-    error_show(get_error_text(error_id));
+    error_show(error.text);
     stop_controller();
   }
 }
