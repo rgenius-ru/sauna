@@ -27,10 +27,13 @@
 #define HUMIDITY_SENSOR_PIN 33
 #define BUZZER_PIN 4
 
-#define TEMP_MIN 50
-#define TEMP_MAX 80
-#define HUMIDITY_MIN 40
-#define HUMIDITY_MAX 80
+#define TEMP_MIN 50             // Celsius
+#define TEMP_MAX 80             // Celsius
+#define TEMP_OVERHEAT_OFFSET 5  // Celsius
+
+#define HUMIDITY_MIN 40             // Percent
+#define HUMIDITY_MAX 80             // Percent
+#define HUMIDITY_OVERVAPOR_OFFSET 5 // Percent
 
 #define HH_MAX 23   // hours
 #define HH_MIN 0    // hours
@@ -176,7 +179,7 @@ void disable_all_objects()
   digitalWrite(FAN_PIN, HIGH);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH);
   digitalWrite(MOTOR_A_PIN, HIGH);
-  digitalWrite(MOTOR_B_PIN, LOW);
+  digitalWrite(MOTOR_B_PIN, HIGH);
   digitalWrite(VAPOR_PIN, LOW);
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
@@ -292,20 +295,6 @@ void endstops_update()
   }
 }
 
-void motor_on()
-{
-  digitalWrite(MOTOR_ENABLE_PIN, LOW);
-  motor_enable = ON;
-  Serial.println("motor_on");
-}
-
-void motor_off()
-{
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH);
-  motor_enable = OFF;
-  Serial.println("motor_off");
-}
-
 void motor_set_direction(bool direction)
 {
   if (direction == DIRECTION_TO_MAX)
@@ -318,6 +307,21 @@ void motor_set_direction(bool direction)
     digitalWrite(MOTOR_A_PIN, LOW);
     digitalWrite(MOTOR_B_PIN, HIGH);
   }
+}
+
+void motor_on()
+{
+  motor_set_direction(motor_direction);
+  digitalWrite(MOTOR_ENABLE_PIN, LOW);
+  motor_enable = ON;
+  Serial.println("motor_on");
+}
+
+void motor_off()
+{
+  digitalWrite(MOTOR_ENABLE_PIN, HIGH);
+  motor_enable = OFF;
+  Serial.println("motor_off");
 }
 
 void motor_update()
@@ -355,9 +359,12 @@ void temp_update()
       t = 0;
       error_set(ERROR_TEMP_SENSOR_DISCONNECTED);
     }
-    else if (t > temp.max_value + 5)
+    else if (t > TEMP_MAX + TEMP_OVERHEAT_OFFSET)
     {
-      t = 99;
+      if (t > temp.max_value)
+      {
+        t = temp.max_value;
+      }
       error_set(ERROR_TEMP_SENSOR_OVERHEAT);
     }
 
@@ -376,8 +383,27 @@ void humidity_update()
   {
     humidity_previous_time = millis();
 
-    uint8_t h = humidity_sensor.readHumidity();
-    humidity.set(h, !humidity_selected_state);
+    float h = humidity_sensor.readHumidity();
+
+    // Check if read failed.
+    if (isnan(h) or h < 0) {
+      error_set(ERROR_HUMIDITY_SENSOR_DISCONNECTED);
+    }
+    else if (h > HUMIDITY_MAX + HUMIDITY_OVERVAPOR_OFFSET)
+    {
+      if (h > humidity.max_value)
+      {
+        h = humidity.max_value;
+      }
+      error_set(ERROR_HUMIDITY_SENSOR_OVERVAPOR);
+    }
+
+    if (error.has_error)
+    {
+      Serial.println(error.text);
+    }
+
+    humidity.set(uint8_t(h), !humidity_selected_state);
   }
 }
 
