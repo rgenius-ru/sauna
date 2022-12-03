@@ -112,6 +112,15 @@ void LatchingButton::inverse_on_off_state(){
     }
 }
 
+void LatchingButton::set_state(bool state){
+    if (state){
+        on();
+    }
+    else{
+        off();
+    }
+}
+
 void LatchingButton::enable() {
     _enabled = true;
 

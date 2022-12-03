@@ -45,6 +45,7 @@ class LatchingButton : public Button {
         void on();
         void off();
         void inverse_on_off_state();
+        void set_state(bool state);
         bool is_on();
 
     private:
