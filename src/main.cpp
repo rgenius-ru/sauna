@@ -57,9 +57,10 @@ bool max_endstop_state = OPEN;
 bool min_endstop_state = OPEN;
 bool motor_enable = OFF;
 bool motor_direction = DIRECTION_TO_MAX;
-bool vapor_enable = OFF;
-bool heater_enable = OFF;
-bool fan_enable = OFF;
+bool vapor_state = OFF;
+bool heater_state = OFF;
+bool fan_state = OFF;
+bool light_state = OFF;
 bool temp_selected_state = false;
 bool humidity_selected_state = false;
 bool timer_selected_state = false;
@@ -204,9 +205,9 @@ void disable_all_objects()
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
 
-  vapor_enable = OFF;
-  heater_enable = OFF;
-  fan_enable = OFF;
+  vapor_state = OFF;
+  heater_state = OFF;
+  fan_state = OFF;
 }
 
 void init_all_pins()
@@ -390,7 +391,7 @@ void humidity_update()
 
 void heater_update()
 {
-  if (not heater_enable)
+  if (not heater_state)
   {
     digitalWrite(HEATER_PIN, LOW);
     return;
@@ -415,7 +416,7 @@ void heater_update()
 
 void vapor_update()
 {
-  if (not vapor_enable)
+  if (not vapor_state)
   {
     digitalWrite(VAPOR_PIN, LOW);
     return;
@@ -440,7 +441,7 @@ void vapor_update()
 
 void fan_update()
 {
-  if (not fan_enable)
+  if (not fan_state)
   {
     digitalWrite(FAN_PIN, HIGH);
     return;
@@ -492,11 +493,31 @@ void power_enable()
   timer_minutes = read_eeprom_timer_minutes_set();
   timer_time = timer_hours * 60 + timer_minutes;
   change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+  
+  heater_state = read_eeprom_button_temp_state();
+  light_state = read_eeprom_button_light_state();
+  fan_state = read_eeprom_button_cooler_state();
+  vapor_state = read_eeprom_button_vapor_state();
+
+  heat_button.set_state(heater_state);
+  light_button.set_state(light_state);
+  fan_button.set_state(fan_state);
+  vapor_button.set_state(vapor_state);
+
+  digitalWrite(HEATER_PIN, heater_state);
+  digitalWrite(LIGHT_PIN, !light_state);
+  digitalWrite(FAN_PIN, !fan_state);
+  digitalWrite(VAPOR_PIN, vapor_state);
 }
 
 void power_disable()
 {
   disable_all_objects();
+
+  save_button_temp_state(heat_button.is_on());
+  save_button_light_state(light_button.is_on());
+  save_button_cooler_state(fan_button.is_on());
+  save_button_vapor_state(vapor_button.is_on());
 
   // move_open_button.off();
   move_close_button.off();
@@ -585,13 +606,13 @@ void move_close(bool state)
 void heater(bool state)
 {
   button_update(heat_button, state);
-  heater_enable = heat_button.is_on();
+  heater_state = heat_button.is_on();
 }
 
 void vapor(bool state)
 {
   button_update(vapor_button, state);
-  vapor_enable = vapor_button.is_on();
+  vapor_state = vapor_button.is_on();
 }
 
 void light(bool state)
@@ -605,7 +626,7 @@ void light(bool state)
 void fan(bool state)
 {
   button_update(fan_button, state);
-  fan_enable = fan_button.is_on();
+  fan_state = fan_button.is_on();
 }
 
 void timer(bool state)
