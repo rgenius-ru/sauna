@@ -19,8 +19,11 @@ bool save(uint8_t addr, uint8_t value);
 
 bool save_temp_set(uint8_t temp);
 bool save_humidity_set(uint8_t humidity);
+bool save_timer_set(uint8_t hours, uint8_t minutes);
 
 uint8_t read_eeprom_temp_set();
 uint8_t read_eeprom_humidity_set();
+uint8_t read_eeprom_timer_hours_set();
+uint8_t read_eeprom_timer_minutes_set();
 
 void read_and_print_eeprom_settings();
