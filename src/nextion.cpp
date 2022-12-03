@@ -50,6 +50,44 @@ void write_nextion(String command) {
   Serial2.write(0xFF);
 }
 
+void change_page_to(uint8_t page_id)
+{
+  Serial.println();
+  Serial.println();
+  Serial.println();
+
+  // read nextion
+  while (Serial2.available() > 0) {
+    // uint8_t byte_read = Serial2.read();
+    // Serial.print(byte_read, HEX);
+    Serial.println(Serial2.readString());
+  }
+  Serial.println();
+
+  for (uint8_t i=0; i<10; i++)
+  {
+    Serial2.print("page " + String(page_id));
+    Serial2.write(0xFF);
+    Serial2.write(0xFF);
+    Serial2.write(0xFF);
+    delay(500);
+
+    String str = "";
+    while (Serial2.available() > 0) {
+      str += char(Serial2.read());
+      // Serial.println(Serial2.readString());
+    }
+    Serial.println(str);
+
+    if (str == "page" + String(page_id) + " initialized")
+    {
+      break;
+    }
+
+    Serial.println();
+  }
+}
+
 void change_pic(String obj_name, uint8_t id_pic) {
   String command = obj_name + "=" + String(id_pic);
   write_nextion(command);
@@ -64,6 +102,28 @@ void change_text(String obj_name, String text){
 
 void change_color(String obj_name, uint32_t color){
   String _text = obj_name + ".pco=" + String(color);
+  write_nextion(_text);
+  Serial.println(_text);
+}
+
+void error_show(String error_text){
+  String obj_name = "top_text";
+  // uint32_t color = 65535;
+  // uint32_t height = 110;
+
+  String _text = "";
+
+  change_page_to(ERROR_PAGE_ID);
+
+  // _text = obj_name + ".hig=" + String(height);
+  // write_nextion(_text);
+  // Serial.println(_text);
+  
+  // _text = obj_name + ".bco=" + String(color);
+  // write_nextion(_text);
+  // Serial.println(_text);
+
+  _text = obj_name + ".txt=" + "\"" + error_text + "\"";
   write_nextion(_text);
   Serial.println(_text);
 }
