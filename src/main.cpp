@@ -494,10 +494,10 @@ void power_enable()
   timer_time = timer_hours * 60 + timer_minutes;
   change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
   
-  heater_state = read_eeprom_button_temp_state();
-  light_state = read_eeprom_button_light_state();
-  fan_state = read_eeprom_button_cooler_state();
-  vapor_state = read_eeprom_button_vapor_state();
+  heater_state = read_eeprom_heater_state();
+  light_state = read_eeprom_light_state();
+  fan_state = read_eeprom_fan_state();
+  vapor_state = read_eeprom_vapor_state();
 
   heat_button.set_state(heater_state);
   light_button.set_state(light_state);
@@ -514,10 +514,10 @@ void power_disable()
 {
   disable_all_objects();
 
-  save_button_temp_state(heat_button.is_on());
-  save_button_light_state(light_button.is_on());
+  save_heater_state(heat_button.is_on());
+  save_light_state(light_button.is_on());
   save_button_cooler_state(fan_button.is_on());
-  save_button_vapor_state(vapor_button.is_on());
+  save_vapor_state(vapor_button.is_on());
 
   // move_open_button.off();
   move_close_button.off();
