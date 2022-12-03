@@ -30,14 +30,23 @@ bool eeprom_check(){
     return data_from_eeprom == check_eeprom_value;
 }
 
+
 bool save_temp_set(uint8_t temp){
     return save(temp_set_addr, temp);
 }
 
-
 bool save_humidity_set(uint8_t humidity){
     return save(humidity_set_addr, humidity);
 }
+
+bool save_timer_set(uint8_t hours, uint8_t minutes){
+    bool result = 1; // have errors
+
+    result = save(timer_hours_set_addr, hours) or save(timer_minutes_set_addr, minutes);
+
+    return result;
+}
+
 
 uint8_t read_eeprom_temp_set(){
     uint8_t temp = 0xff;
@@ -52,6 +61,21 @@ uint8_t read_eeprom_humidity_set(){
 
     return humidity;
 }
+
+uint8_t read_eeprom_timer_hours_set(){
+    uint8_t hours = 0xff;
+    EEPROM.get(timer_hours_set_addr, hours); 
+
+    return hours;
+}
+
+uint8_t read_eeprom_timer_minutes_set(){
+    uint8_t minutes = 0xff;
+    EEPROM.get(timer_minutes_set_addr, minutes); 
+
+    return minutes;
+}
+
 
 void read_and_print_eeprom_settings(){
     String s = "";

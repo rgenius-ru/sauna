@@ -2,11 +2,13 @@
 #include "EEPROM.h"
 
 
-#define bytes_used_eeprom 3
+#define bytes_used_eeprom 5
 
 #define check_eeprom_addr 0
 #define temp_set_addr 1
 #define humidity_set_addr 2
+#define timer_hours_set_addr 3
+#define timer_minutes_set_addr 4
 
 #define check_eeprom_value 85
 
