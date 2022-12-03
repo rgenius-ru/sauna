@@ -64,6 +64,7 @@ bool temp_selected_state = false;
 bool humidity_selected_state = false;
 bool timer_selected_state = false;
 bool timer_state = false;
+bool timer_need_save = false;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -486,6 +487,11 @@ void power_enable()
   // change_color("time", TEXT_COLOR_DEFAULT);
   change_color("t_Cels", TEXT_COLOR_DEFAULT);
   change_color("h_Perc", TEXT_COLOR_DEFAULT);
+
+  timer_hours = read_eeprom_timer_hours_set();
+  timer_minutes = read_eeprom_timer_minutes_set();
+  timer_time = timer_hours * 60 + timer_minutes;
+  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
 }
 
 void power_disable()
@@ -753,6 +759,7 @@ void hh_up(bool state)
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
     timer_selected_previous_time = millis();
     timer_selected_state = true;
+    timer_need_save = true;
   }
 }
 
@@ -778,6 +785,7 @@ void hh_down(bool state)
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
     timer_selected_previous_time = millis();
     timer_selected_state = true;
+    timer_need_save = true;
   }
 }
 
@@ -803,6 +811,7 @@ void mm_up(bool state)
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
     timer_selected_previous_time = millis();
     timer_selected_state = true;
+    timer_need_save = true;
   }
 }
 
@@ -828,6 +837,7 @@ void mm_down(bool state)
     change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
     timer_selected_previous_time = millis();
     timer_selected_state = true;
+    timer_need_save = true;
   }
 }
 
@@ -847,6 +857,12 @@ void timer_selected_update()
   {
     change_color("time", TEXT_COLOR_DEFAULT);
     timer_selected_state = false;
+
+    if (timer_need_save)
+    {
+      save_timer_set(timer_hours, timer_minutes);
+      timer_need_save = false;
+    }
   }
 }
 
@@ -1111,6 +1127,11 @@ void setup()
   eeprom_settings_init();
   temp_set = read_eeprom_temp_set();
   humidity_set = read_eeprom_humidity_set();
+
+  timer_hours = read_eeprom_timer_hours_set();
+  timer_minutes = read_eeprom_timer_minutes_set();
+  timer_time = timer_hours * 60 + timer_minutes;
+  // change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
 
   temp_sensor.begin();
   temp_sensor.setResolution(9);
