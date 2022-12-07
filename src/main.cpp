@@ -354,23 +354,15 @@ void temp_update()
     temp_sensor.setWaitForConversion(true);
 
     float t = temp_sensor.getTempCByIndex(0);
+
     if (t == DEVICE_DISCONNECTED_C or t == 129 or t < 0)
     {
       t = 0;
       error_set(ERROR_TEMP_SENSOR_DISCONNECTED);
     }
-    else if (t > TEMP_MAX + TEMP_OVERHEAT_OFFSET)
+    else if (t > temp.max_value)
     {
-      if (t > temp.max_value)
-      {
-        t = temp.max_value;
-      }
-      error_set(ERROR_TEMP_SENSOR_OVERHEAT);
-    }
-
-    if (error.has_error)
-    {
-      Serial.println(error.text);
+      t = temp.max_value;
     }
 
     temp.set(uint8_t(t), !temp_selected_state);
@@ -389,18 +381,9 @@ void humidity_update()
     if (isnan(h) or h < 0) {
       error_set(ERROR_HUMIDITY_SENSOR_DISCONNECTED);
     }
-    else if (h > HUMIDITY_MAX + HUMIDITY_OVERVAPOR_OFFSET)
+    else if (h > humidity.max_value)
     {
-      if (h > humidity.max_value)
-      {
-        h = humidity.max_value;
-      }
-      error_set(ERROR_HUMIDITY_SENSOR_OVERVAPOR);
-    }
-
-    if (error.has_error)
-    {
-      Serial.println(error.text);
+      h = humidity.max_value;
     }
 
     humidity.set(uint8_t(h), !humidity_selected_state);
@@ -1070,30 +1053,58 @@ void stop_controller()
   }
 }
 
+void check_overheat()
+{
+  uint8_t t = temp.get();
+
+  if (t > TEMP_MAX + TEMP_OVERHEAT_OFFSET)
+  {
+    error_set(ERROR_TEMP_SENSOR_OVERHEAT);
+  }
+}
+
+void check_overvapor()
+{
+  uint8_t h = humidity.get();
+
+  if (h > HUMIDITY_MAX + HUMIDITY_OVERVAPOR_OFFSET)
+  {
+    error_set(ERROR_HUMIDITY_SENSOR_OVERVAPOR);
+  }
+}
+
+void actions_on_error()
+{
+  Serial.println(error.text);
+      
+  if (page_id_now == MAIN_PAGE_ID)
+  {
+    power_disable();
+
+    power_button.disable();
+    move_open_button.disable();
+    move_close_button.disable();
+  }
+  else
+  {
+    disable_all_objects();
+  }
+
+  error_show(error.text);
+  stop_controller();
+}
+
 void protection_check()
 {
   if (millis() > protection_check_previous_time + protection_check_interval)
   {
-    if (not error.has_error)
-    {
-      return;
-    }
-      
-    if (page_id_now == MAIN_PAGE_ID)
-    {
-      power_disable();
+    check_overheat();
+    check_overvapor();
 
-      power_button.disable();
-      move_open_button.disable();
-      move_close_button.disable();
-    }
-    else
+    if (error.has_error)
     {
-      disable_all_objects();
+      actions_on_error();
     }
-
-    error_show(error.text);
-    stop_controller();
   }
 }
 
