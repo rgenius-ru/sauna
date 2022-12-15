@@ -30,10 +30,12 @@
 #define TEMP_MIN 50             // Celsius
 #define TEMP_MAX 80             // Celsius
 #define TEMP_OVERHEAT_OFFSET 5  // Celsius
+#define TEMP_DELTA_CHECK_WARMING 2  // Celsius
 
 #define HUMIDITY_MIN 40             // Percent
 #define HUMIDITY_MAX 80             // Percent
 #define HUMIDITY_OVERVAPOR_OFFSET 5 // Percent
+#define HUMIDITY_DELTA_CHECK_WARMING 5  // Percent
 
 #define HH_MAX 23   // hours
 #define HH_MIN 0    // hours
@@ -61,7 +63,9 @@ bool max_endstop_state = OPEN;
 bool min_endstop_state = OPEN;
 bool motor_enable = OFF;
 bool motor_direction = DIRECTION_TO_MAX;
+bool moistening_state = OFF;
 bool vapor_state = OFF;
+bool warming_state = OFF;
 bool heater_state = OFF;
 bool fan_state = OFF;
 bool light_state = OFF;
@@ -70,6 +74,8 @@ bool humidity_selected_state = false;
 bool timer_selected_state = false;
 bool timer_state = false;
 bool timer_need_save = false;
+bool check_warming_state = OFF;
+bool check_moistening_state = OFF;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -112,6 +118,14 @@ uint16_t buzzer_flash_interval = 1000; // ms
 
 uint32_t protection_check_previous_time = 0;
 uint16_t protection_check_interval = 1000; // ms
+
+uint32_t check_warming_previous_time = 0;
+uint16_t check_warming_interval = 30000; // ms
+uint8_t check_warming_previous_temp = 0;
+
+uint32_t check_moistening_previous_time = 0;
+uint16_t check_moistening_interval = 30000; // ms
+uint8_t check_moistening_previous_humidity = 0;
 
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
@@ -175,17 +189,23 @@ String format_two_digits(uint8_t number)
 void disable_all_objects()
 {
   // Off objects
+  digitalWrite(VAPOR_PIN, LOW);
+  vapor_state = OFF;
+
+  digitalWrite(HEATER_PIN, LOW);
+  heater_state = OFF;
+
   digitalWrite(LIGHT_PIN, HIGH);
   digitalWrite(FAN_PIN, HIGH);
+  digitalWrite(BUZZER_PIN, LOW);
+  
   digitalWrite(MOTOR_ENABLE_PIN, HIGH);
   digitalWrite(MOTOR_A_PIN, HIGH);
   digitalWrite(MOTOR_B_PIN, HIGH);
-  digitalWrite(VAPOR_PIN, LOW);
-  digitalWrite(HEATER_PIN, LOW);
-  digitalWrite(BUZZER_PIN, LOW);
 
-  vapor_state = OFF;
-  heater_state = OFF;
+  warming_state = OFF;
+  moistening_state = OFF;
+
   fan_state = OFF;
 }
 
@@ -392,9 +412,10 @@ void humidity_update()
 
 void heater_update()
 {
-  if (not heater_state)
+  if (not warming_state)
   {
     digitalWrite(HEATER_PIN, LOW);
+    heater_state = OFF;
     return;
   }
 
@@ -407,19 +428,22 @@ void heater_update()
     if (t < temp_set)
     {
       digitalWrite(HEATER_PIN, HIGH);
+      heater_state = ON;
     }
     else if (t > temp_set)
     {
       digitalWrite(HEATER_PIN, LOW);
+      heater_state = OFF;
     }
   }
 }
 
 void vapor_update()
 {
-  if (not vapor_state)
+  if (not moistening_state)
   {
     digitalWrite(VAPOR_PIN, LOW);
+    vapor_state = OFF;
     return;
   }
 
@@ -432,10 +456,12 @@ void vapor_update()
     if (h < humidity_set)
     {
       digitalWrite(VAPOR_PIN, HIGH);
+      vapor_state = ON;
     }
     else if (h > humidity_set)
     {
       digitalWrite(VAPOR_PIN, LOW);
+      vapor_state = OFF;
     }
   }
 }
@@ -495,20 +521,24 @@ void power_enable()
   timer_time = timer_hours * 60 + timer_minutes;
   change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
   
-  heater_state = read_eeprom_heater_state();
+  warming_state = read_eeprom_heater_state();
   light_state = read_eeprom_light_state();
   fan_state = read_eeprom_fan_state();
-  vapor_state = read_eeprom_vapor_state();
+  moistening_state = read_eeprom_vapor_state();
 
-  heat_button.set_state(heater_state);
+  heat_button.set_state(warming_state);
   light_button.set_state(light_state);
   fan_button.set_state(fan_state);
-  vapor_button.set_state(vapor_state);
+  vapor_button.set_state(moistening_state);
 
-  digitalWrite(HEATER_PIN, heater_state);
+  digitalWrite(HEATER_PIN, warming_state);
+  heater_state = warming_state;
+
+  digitalWrite(VAPOR_PIN, moistening_state);
+  vapor_state = moistening_state;
+
   digitalWrite(LIGHT_PIN, !light_state);
   digitalWrite(FAN_PIN, !fan_state);
-  digitalWrite(VAPOR_PIN, vapor_state);
 }
 
 void power_disable()
@@ -607,13 +637,13 @@ void move_close(bool state)
 void heater(bool state)
 {
   button_update(heat_button, state);
-  heater_state = heat_button.is_on();
+  warming_state = heat_button.is_on();
 }
 
 void vapor(bool state)
 {
   button_update(vapor_button, state);
-  vapor_state = vapor_button.is_on();
+  moistening_state = vapor_button.is_on();
 }
 
 void light(bool state)
@@ -1073,6 +1103,70 @@ void check_overvapor()
   }
 }
 
+void check_warming()
+{
+  if (heater_state == OFF)
+  {
+    check_warming_state = OFF;
+    return;
+  }
+
+  if (check_warming_state == OFF)
+  {
+    check_warming_state = ON;
+    check_warming_previous_time = millis();
+
+    return;
+  }
+
+  if (millis() > check_warming_previous_time + check_warming_interval)
+  {
+    uint8_t temp_delta = temp.get() - check_warming_previous_temp;
+    if (temp_delta >= TEMP_DELTA_CHECK_WARMING)
+    {
+      check_warming_previous_temp = temp.get();
+    }
+    else
+    {
+      error_set(ERROR_HEATER);
+    }
+
+    check_warming_previous_time = millis();
+  }
+}
+
+void check_moistening()
+{
+  if (vapor_state == OFF)
+  {
+    check_moistening_state = OFF;
+    return;
+  }
+
+  if (check_moistening_state == OFF)
+  {
+    check_moistening_state = ON;
+    check_moistening_previous_time = millis();
+
+    return;
+  }
+
+  if (millis() > check_moistening_previous_time + check_moistening_interval)
+  {
+    uint8_t humidity_delta = humidity.get() - check_moistening_previous_humidity;
+    if (humidity_delta >= HUMIDITY_DELTA_CHECK_WARMING)
+    {
+      check_moistening_previous_humidity = humidity.get();
+    }
+    else
+    {
+      error_set(ERROR_VAPOR);
+    }
+
+    check_moistening_previous_time = millis();
+  }
+}
+
 void actions_on_error()
 {
   Serial.println(error.text);
@@ -1098,6 +1192,9 @@ void protection_check()
 {
   if (millis() > protection_check_previous_time + protection_check_interval)
   {
+    check_warming();
+    check_moistening();
+
     check_overheat();
     check_overvapor();
 
