@@ -76,6 +76,7 @@ bool timer_state = false;
 bool timer_need_save = false;
 bool check_warming_state = OFF;
 bool check_moistening_state = OFF;
+bool power_state = OFF;
 
 uint32_t endstop_previous_time = 0;
 uint16_t endstop_interval_update = 50; // ms
@@ -315,6 +316,134 @@ void endstops_update()
   }
 }
 
+void power_enable()
+{
+  move_open_button.off();
+  move_open_button.disable();
+  move_close_button.enable();
+
+  heat_button.enable();
+  light_button.enable();
+  vapor_button.enable();
+  fan_button.enable();
+
+  t_up_button.enable();
+  t_down_button.enable();
+  h_up_button.enable();
+  h_down_button.enable();
+
+  hh_up_button.enable();
+  hh_down_button.enable();
+  mm_up_button.enable();
+  mm_down_button.enable();
+
+  change_color("t", TEXT_COLOR_DEFAULT);
+  change_color("h", TEXT_COLOR_DEFAULT);
+  // change_color("time", TEXT_COLOR_DEFAULT);
+  change_color("t_Cels", TEXT_COLOR_DEFAULT);
+  change_color("h_Perc", TEXT_COLOR_DEFAULT);
+
+  timer_hours = read_eeprom_timer_hours_set();
+  timer_minutes = read_eeprom_timer_minutes_set();
+  timer_time = timer_hours * 60 + timer_minutes;
+  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+  
+  warming_state = read_eeprom_heater_state();
+  light_state = read_eeprom_light_state();
+  fan_state = read_eeprom_fan_state();
+  moistening_state = read_eeprom_vapor_state();
+
+  heat_button.set_state(warming_state);
+  light_button.set_state(light_state);
+  fan_button.set_state(fan_state);
+  vapor_button.set_state(moistening_state);
+
+  digitalWrite(HEATER_PIN, warming_state);
+  heater_state = warming_state;
+
+  digitalWrite(VAPOR_PIN, moistening_state);
+  vapor_state = moistening_state;
+
+  digitalWrite(LIGHT_PIN, !light_state);
+  digitalWrite(FAN_PIN, !fan_state);
+
+  digitalWrite(LED_PIN, HIGH);
+
+  power_state = ON;
+}
+
+void power_disable()
+{
+  disable_all_objects();
+
+  save_heater_state(heat_button.is_on());
+  save_light_state(light_button.is_on());
+  save_button_cooler_state(fan_button.is_on());
+  save_vapor_state(vapor_button.is_on());
+
+  move_open_button.enable();
+  move_close_button.off();
+  move_close_button.disable();
+
+  vapor_button.off();
+  fan_button.off();
+  heat_button.off();
+  light_button.off();
+
+  heat_button.disable();
+  light_button.disable();
+  vapor_button.disable();
+  fan_button.disable();
+
+  t_up_button.disable();
+  t_down_button.disable();
+  h_up_button.disable();
+  h_down_button.disable();
+
+  hh_up_button.disable();
+  hh_down_button.disable();
+  mm_up_button.disable();
+  mm_down_button.disable();
+
+  change_color("t", TEXT_COLOR_DISABLED);
+  change_color("h", TEXT_COLOR_DISABLED);
+  change_color("time", TEXT_COLOR_DISABLED);
+  change_color("t_Cels", TEXT_COLOR_DISABLED);
+  change_color("h_Perc", TEXT_COLOR_DISABLED);
+
+  timer_state = OFF;
+  timer_selected_state = false;
+  
+  timer_time = 0;
+  timer_hours = 0;
+  timer_minutes = 0;
+  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
+
+  light_flash_count = 0;
+  buzzer_flash_count = 0;
+
+  digitalWrite(LED_PIN, LOW);
+
+  power_state = OFF;
+}
+
+void power(bool state)
+{
+  button_update(power_button, state);
+  digitalWrite(LED_PIN, power_button.is_on());
+  if (state == PRESSED)
+  {
+    if (power_button.is_on())
+    {
+      power_enable();
+    }
+    else
+    {
+      power_disable();
+    }
+  }
+}
+
 void motor_set_direction(bool direction)
 {
   if (direction == DIRECTION_TO_MAX)
@@ -350,15 +479,17 @@ void motor_update()
     if (motor_direction == DIRECTION_TO_MAX and max_endstop_state == CLOSE)
     {
       motor_off();
-      move_open_button.off();
       motor_direction = DIRECTION_TO_MIN;
       motor_set_direction(motor_direction);
+
+      power_enable();
     }else if(motor_direction == DIRECTION_TO_MIN and min_endstop_state == CLOSE)
     {
       motor_off();
-      move_open_button.off();
       motor_direction = DIRECTION_TO_MAX;
       motor_set_direction(motor_direction);
+
+      power_disable();
     }
   }
 }
@@ -491,123 +622,6 @@ void fan_update()
   }
 }
 
-void power_enable()
-{
-  move_open_button.disable();
-  move_close_button.enable();
-  heat_button.enable();
-  light_button.enable();
-  vapor_button.enable();
-  fan_button.enable();
-
-  t_up_button.enable();
-  t_down_button.enable();
-  h_up_button.enable();
-  h_down_button.enable();
-
-  hh_up_button.enable();
-  hh_down_button.enable();
-  mm_up_button.enable();
-  mm_down_button.enable();
-
-  change_color("t", TEXT_COLOR_DEFAULT);
-  change_color("h", TEXT_COLOR_DEFAULT);
-  // change_color("time", TEXT_COLOR_DEFAULT);
-  change_color("t_Cels", TEXT_COLOR_DEFAULT);
-  change_color("h_Perc", TEXT_COLOR_DEFAULT);
-
-  timer_hours = read_eeprom_timer_hours_set();
-  timer_minutes = read_eeprom_timer_minutes_set();
-  timer_time = timer_hours * 60 + timer_minutes;
-  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
-  
-  warming_state = read_eeprom_heater_state();
-  light_state = read_eeprom_light_state();
-  fan_state = read_eeprom_fan_state();
-  moistening_state = read_eeprom_vapor_state();
-
-  heat_button.set_state(warming_state);
-  light_button.set_state(light_state);
-  fan_button.set_state(fan_state);
-  vapor_button.set_state(moistening_state);
-
-  digitalWrite(HEATER_PIN, warming_state);
-  heater_state = warming_state;
-
-  digitalWrite(VAPOR_PIN, moistening_state);
-  vapor_state = moistening_state;
-
-  digitalWrite(LIGHT_PIN, !light_state);
-  digitalWrite(FAN_PIN, !fan_state);
-}
-
-void power_disable()
-{
-  disable_all_objects();
-
-  save_heater_state(heat_button.is_on());
-  save_light_state(light_button.is_on());
-  save_button_cooler_state(fan_button.is_on());
-  save_vapor_state(vapor_button.is_on());
-
-  // move_open_button.off();
-  move_close_button.off();
-  vapor_button.off();
-  fan_button.off();
-  heat_button.off();
-  light_button.off();
-
-  move_open_button.disable();
-  heat_button.disable();
-  light_button.disable();
-  vapor_button.disable();
-  fan_button.disable();
-
-  t_up_button.disable();
-  t_down_button.disable();
-  h_up_button.disable();
-  h_down_button.disable();
-
-  hh_up_button.disable();
-  hh_down_button.disable();
-  mm_up_button.disable();
-  mm_down_button.disable();
-
-  change_color("t", TEXT_COLOR_DISABLED);
-  change_color("h", TEXT_COLOR_DISABLED);
-  change_color("time", TEXT_COLOR_DISABLED);
-  change_color("t_Cels", TEXT_COLOR_DISABLED);
-  change_color("h_Perc", TEXT_COLOR_DISABLED);
-
-  timer_state = OFF;
-  timer_selected_state = false;
-  
-  timer_time = 0;
-  timer_hours = 0;
-  timer_minutes = 0;
-  change_text("time", format_two_digits(timer_hours) + ":" + format_two_digits(timer_minutes));
-
-  light_flash_count = 0;
-  buzzer_flash_count = 0;
-}
-
-void power(bool state)
-{
-  button_update(power_button, state);
-  digitalWrite(LED_PIN, power_button.is_on());
-  if (state == PRESSED)
-  {
-    if (power_button.is_on())
-    {
-      power_enable();
-    }
-    else
-    {
-      power_disable();
-    }
-  }
-}
-
 void move_open(bool state)
 {
   button_update(move_open_button, state);
@@ -662,7 +676,7 @@ void fan(bool state)
 
 void timer(bool state)
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     return;
   }
@@ -895,7 +909,7 @@ void mm_down(bool state)
 
 void timer_selected_update()
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     return;
   }
@@ -920,7 +934,7 @@ void timer_selected_update()
 
 void temp_selected_update()
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     temp_selected_state = false;
     return;
@@ -941,7 +955,7 @@ void temp_selected_update()
 
 void humidity_selected_update()
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     humidity_selected_state = false;
     return;
@@ -962,7 +976,7 @@ void humidity_selected_update()
 
 void ligh_update()
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     return;
   }
@@ -982,7 +996,7 @@ void ligh_update()
 
 void buzzer_update()
 {
-  if (not power_button.is_on())
+  if (not power_state)
   {
     return;
   }
