@@ -135,7 +135,7 @@ uint8_t page_id_now = LOGO_PAGE_ID;
 
 String colon = COLON;
 
-LatchingButton power_button = LatchingButton("power");
+// LatchingButton power_button = LatchingButton("power");
 LatchingButton move_open_button = LatchingButton("move_open");
 LatchingButton move_close_button = LatchingButton("move_close");
 
@@ -231,7 +231,7 @@ void init_all_pins()
 
 void buttons_init()
 {
-  power_button.set_pics(big_on_normal, big_on_pressed, big_off_normal, big_off_pressed, big_disable_normal);
+  // power_button.set_pics(big_on_normal, big_on_pressed, big_off_normal, big_off_pressed, big_disable_normal);
   move_open_button.set_pics(open_on_normal, open_on_pressed, open_off_normal, open_off_pressed, open_disable_normal);
   move_close_button.set_pics(close_on_normal, close_on_pressed, close_off_normal, close_off_pressed, close_disable_normal);
 
@@ -250,7 +250,7 @@ void buttons_init()
   mm_up_button.set_pics(up_normal, up_pressed, up_disable);
   mm_down_button.set_pics(down_normal, down_pressed, down_disable);
 
-  power_button.init(ENABLE, true);
+  // power_button.init(ENABLE, true);
   move_open_button.init(ENABLE, true);
   move_close_button.init(DISABLE, true);
 
@@ -427,22 +427,22 @@ void power_disable()
   power_state = OFF;
 }
 
-void power(bool state)
-{
-  button_update(power_button, state);
-  digitalWrite(LED_PIN, power_button.is_on());
-  if (state == PRESSED)
-  {
-    if (power_button.is_on())
-    {
-      power_enable();
-    }
-    else
-    {
-      power_disable();
-    }
-  }
-}
+// void power(bool state)
+// {
+//   button_update(power_button, state);
+//   digitalWrite(LED_PIN, power_button.is_on());
+//   if (state == PRESSED)
+//   {
+//     if (power_button.is_on())
+//     {
+//       power_enable();
+//     }
+//     else
+//     {
+//       power_disable();
+//     }
+//   }
+// }
 
 void motor_set_direction(bool direction)
 {
@@ -1189,7 +1189,7 @@ void actions_on_error()
   {
     power_disable();
 
-    power_button.disable();
+    // power_button.disable();
     move_open_button.disable();
     move_close_button.disable();
   }
@@ -1235,7 +1235,7 @@ void display_update()
     switch (button)
     {
     case 1: // power
-      power(state);
+      // power(state);
       break;
 
     case 2: // move open
