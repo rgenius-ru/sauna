@@ -56,5 +56,9 @@
 #define close_on_normal         41
 #define close_on_pressed        42
 
+#define animation_off           43
+#define animation_on_first      44
+#define animation_on_last       155
+
 
 #endif // IMAGES_H
