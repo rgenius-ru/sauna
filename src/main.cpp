@@ -1255,7 +1255,7 @@ void animation_update()
       }
     }
 
-    change_pic(display_animation_pic_block_name, current_animation_pic_id, true);
+    change_pic(display_animation_pic_block_name, current_animation_pic_id, false);
   }
 }
 
