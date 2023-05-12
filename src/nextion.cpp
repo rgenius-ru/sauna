@@ -94,6 +94,15 @@ void change_pic(String obj_name, uint8_t id_pic) {
   Serial.println(command);
 }
 
+void change_pic(String obj_name, uint8_t id_pic, bool is_need_print) {
+  String command = obj_name + "=" + String(id_pic);
+  write_nextion(command);
+
+  if (is_need_print){
+    Serial.println(command);
+  }
+}
+
 void change_text(String obj_name, String text){
   String _text = obj_name + ".txt=" + "\"" + text + "\"";
   write_nextion(_text);
