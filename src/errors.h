@@ -12,6 +12,7 @@
 #define ERROR_HUMIDITY_SENSOR_DISCONNECTED "Датчик влажности отключен" // "Failed to read from DHT sensor!"
 #define ERROR_HUMIDITY_SENSOR_OVERVAPOR "Переувлажнение воздуха"
 #define ERROR_VAPOR "Отсутствует увлажнение воздуха"
+#define ERROR_MOTOR "Неисправен выдвижной механизм"
 
 struct Error {
   bool has_error;

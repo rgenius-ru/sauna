@@ -76,6 +76,7 @@ bool timer_state = false;
 bool timer_need_save = false;
 bool check_warming_state = OFF;
 bool check_moistening_state = OFF;
+bool check_moving_state = OFF;
 bool power_state = OFF;
 
 uint32_t endstop_previous_time = 0;
@@ -128,6 +129,9 @@ uint32_t check_moistening_previous_time = 0;
 uint16_t check_moistening_interval = 30000; // ms
 uint8_t check_moistening_previous_humidity = 0;
 
+uint32_t check_moving_previous_time = 0;
+uint16_t check_moving_interval = 30000; // ms
+
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
 
@@ -166,6 +170,7 @@ uint8_t timer_minutes = 0;
 
 Error error;
 
+String animation = "animation";
 
 void error_set(String text)
 {
@@ -1181,6 +1186,28 @@ void check_moistening()
   }
 }
 
+void check_moving()
+{
+  if (motor_enable == OFF)
+  {
+    check_moving_state = OFF;
+    return;
+  }
+
+  if (check_moving_state == OFF)
+  {
+    check_moving_state = ON;
+    check_moving_previous_time = millis();
+
+    return;
+  }
+
+  if (millis() > check_moving_previous_time + check_moving_interval)
+  {
+    error_set(ERROR_MOTOR);
+  }
+}
+
 void actions_on_error()
 {
   Serial.println(error.text);
@@ -1211,6 +1238,8 @@ void protection_check()
 
     check_overheat();
     check_overvapor();
+
+    check_moving();
 
     if (error.has_error)
     {
