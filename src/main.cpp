@@ -77,6 +77,7 @@ bool timer_need_save = false;
 bool check_warming_state = OFF;
 bool check_moistening_state = OFF;
 bool check_moving_state = OFF;
+bool moving_animation_state = OFF;
 bool power_state = OFF;
 
 uint32_t endstop_previous_time = 0;
@@ -132,6 +133,10 @@ uint8_t check_moistening_previous_humidity = 0;
 uint32_t check_moving_previous_time = 0;
 uint16_t check_moving_interval = 30000; // ms
 
+uint32_t moving_animation_previous_time = 0;
+uint16_t moving_animation_interval = 41; // ms // 24 fps - 41 ms
+byte current_animation_pic_id = animation_off;
+
 uint16_t light_flash_count = 0;
 uint16_t buzzer_flash_count = 0;
 
@@ -170,7 +175,8 @@ uint8_t timer_minutes = 0;
 
 Error error;
 
-String animation = "animation";
+String display_animation_pic_block_name = "animation.pic";
+
 
 void error_set(String text)
 {
@@ -1208,6 +1214,51 @@ void check_moving()
   }
 }
 
+void animation_update()
+{
+  if (motor_enable == OFF)
+  {
+    moving_animation_state = OFF;
+
+    if (max_endstop_state == CLOSE or min_endstop_state == CLOSE){
+      if (current_animation_pic_id != animation_off){
+        current_animation_pic_id = animation_off;
+        change_pic(display_animation_pic_block_name, current_animation_pic_id);
+      }
+    }
+    
+    return;
+  }
+
+  if (moving_animation_state == OFF)
+  {
+    moving_animation_state = ON;
+    moving_animation_previous_time = millis();
+
+    return;
+  }
+
+  if (millis() > moving_animation_previous_time + moving_animation_interval)
+  {
+    moving_animation_previous_time = millis();
+
+    if (motor_direction == DIRECTION_TO_MIN){
+      current_animation_pic_id++;
+      if (current_animation_pic_id > animation_on_last){
+        current_animation_pic_id = animation_on_first;
+      }
+    }
+    else{
+      current_animation_pic_id--;
+      if (current_animation_pic_id < animation_on_first){
+        current_animation_pic_id = animation_on_last;
+      }
+    }
+
+    change_pic(display_animation_pic_block_name, current_animation_pic_id, true);
+  }
+}
+
 void actions_on_error()
 {
   Serial.println(error.text);
@@ -1378,6 +1429,7 @@ void loop()
 {
   endstops_update();
   motor_update();
+  animation_update();
 
   temp_update();
   heater_update();
